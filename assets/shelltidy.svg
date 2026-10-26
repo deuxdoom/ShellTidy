@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 64 64" fill="none">
+  <title>ShellTidy</title>
+  <desc>A context menu with application rows and a remove badge.</desc>
+  <defs>
+    <linearGradient id="tile" x1="8" y1="4" x2="58" y2="64" gradientUnits="userSpaceOnUse"><stop stop-color="#F9FCFF"/><stop offset="1" stop-color="#DFEAF8"/></linearGradient>
+    <linearGradient id="blue" x1="10" y1="8" x2="43" y2="48" gradientUnits="userSpaceOnUse"><stop stop-color="#49B3FF"/><stop offset="1" stop-color="#3262D9"/></linearGradient>
+    <linearGradient id="delete" x1="39" y1="35" x2="60" y2="61" gradientUnits="userSpaceOnUse"><stop stop-color="#FA776D"/><stop offset="1" stop-color="#DA424D"/></linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#tile)"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="14.5" stroke="#C8D8ED"/>
+  <rect x="10" y="10" width="41" height="41" rx="8" fill="url(#blue)"/>
+  <rect x="14" y="14" width="33" height="33" rx="4.5" fill="#FFFFFF"/>
+  <path d="M14 21H47" stroke="#DDE8F6" stroke-width="2"/>
+  <circle cx="18" cy="18" r="1" fill="#79A4E7"/>
+  <circle cx="22" cy="18" r="1" fill="#79A4E7"/>
+  <rect x="18" y="26" width="4" height="4" rx="1" fill="#518CF1"/>
+  <rect x="18" y="34" width="4" height="4" rx="1" fill="#518CF1"/>
+  <path d="M27 28H40M27 36H35" stroke="#7C94B7" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="48" cy="48" r="13.5" fill="#F4F8FF"/>
+  <circle cx="48" cy="48" r="11.5" fill="url(#delete)"/>
+  <path d="M42 44H54M46 41H50M43.5 45.5L44.2 53.5C44.3 54.4 44.8 55 45.8 55H50.2C51.2 55 51.7 54.4 51.8 53.5L52.5 45.5M46.5 47.5V52M49.5 47.5V52" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,39 @@
+name: Windows build
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Build Release x64
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build/temp | Out-Null
+          $env:TEMP = "$PWD/build/temp"
+          $env:TMP = $env:TEMP
+          $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
+          $install = & $vswhere -latest -products '*' -requires Microsoft.Component.MSBuild -property installationPath
+          & "$install/MSBuild/Current/Bin/MSBuild.exe" ShellTidy.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /verbosity:minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run isolated registry tests
+        shell: pwsh
+        run: |
+          $env:SHELLTIDY_BACKUP_DIR = "$PWD/build/test-backups"
+          $report = "$PWD/build/test-results.txt"
+          $test = Start-Process ./dist/ShellTidy.exe -ArgumentList @('--self-test',('"' + $report + '"')) -PassThru -Wait -WindowStyle Hidden
+          Get-Content -LiteralPath $report
+          if ($test.ExitCode -ne 0) { exit $test.ExitCode }
+      - name: Upload executable and test report
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ShellTidy-0.0.1-win-x64
+          path: |
+            dist/ShellTidy.exe
+            build/test-results.txt
+          if-no-files-found: error

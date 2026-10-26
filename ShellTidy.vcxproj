@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{2BCC4034-253B-4A67-ACE6-197D545B7090}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ShellTidy</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <OutDir>$(MSBuildThisFileDirectory)dist\</OutDir>
+    <IntDir>$(MSBuildThisFileDirectory)build\msbuild\</IntDir>
+    <TargetName>ShellTidy</TargetName>
+    <LinkIncremental>false</LinkIncremental>
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ConformanceMode>true</ConformanceMode>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;_WIN32_WINNT=0x0A00;WINVER=0x0A00;NTDDI_VERSION=0x0A000000;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ResourceCompile><AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>user32.lib;gdi32.lib;advapi32.lib;shell32.lib;shlwapi.lib;comctl32.lib;ole32.lib;uxtheme.lib;dwmapi.lib;rstrtmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\operations.cpp" />
+    <ClCompile Include="src\registry.cpp" />
+    <ClCompile Include="src\scanner.cpp" />
+    <ClCompile Include="src\tests.cpp" />
+    <ClCompile Include="src\ui.cpp" />
+    <ClCompile Include="src\ui_support.cpp" />
+    <ClCompile Include="src\windows.cpp" />
+  </ItemGroup>
+  <ItemGroup><ClInclude Include="src\shelltidy.h" /><ResourceCompile Include="resources\app.rc" /></ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

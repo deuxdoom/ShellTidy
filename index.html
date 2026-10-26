@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8fc">
+  <meta name="description" content="오래된 연결 프로그램과 우클릭 메뉴 등록을 실행 경로별로 확인하고, 백업 후 선택 삭제하는 가벼운 Windows 네이티브 유틸리티.">
+  <meta property="og:title" content="ShellTidy — 메뉴는 가볍게, 선택은 정확하게">
+  <meta property="og:description" content="Open With와 우클릭 메뉴를 정리하는 Windows용 오픈소스 유틸리티. 단일 EXE, 자동 백업, 선택 삭제.">
+  <meta property="og:type" content="website">
+  <title>ShellTidy — 메뉴는 가볍게, 선택은 정확하게</title>
+  <link rel="icon" href="assets/shelltidy.svg" type="image/svg+xml">
+  <style>
+    :root{color-scheme:light;--ink:#1d2b42;--muted:#69768a;--blue:#356de1;--paper:#f6f8fc;--line:#dde4ee;--green:#24856f;--red:#ba514d;--mono:Consolas,monospace}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.75 "Segoe UI","Malgun Gothic",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}img{max-width:100%;height:auto}h1,h2,h3,p{margin:0}h1,h2,h3{line-height:1.25;letter-spacing:-.055em}a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #78a3f8;outline-offset:4px}.wrap{width:min(1240px,calc(100% - 72px));margin:auto}.eyebrow{font:600 11px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--blue)}
+    header{border-bottom:1px solid var(--line);background:#f6f8fcf0}.nav{height:82px;display:flex;align-items:center;gap:30px}.brand{display:flex;align-items:center;gap:12px;font-size:21px;font-weight:650;letter-spacing:-.04em}.brand img{width:38px;height:38px}.navlinks{display:flex;gap:28px;margin-left:auto;font-size:13px;color:var(--muted)}.repo{padding:7px 15px;border:1px solid #cdd7e7;border-radius:8px;font-size:12px;font-weight:600}.repo span{margin-left:16px}
+    .hero{padding:92px 0 86px;display:grid;grid-template-columns:.92fr 1.18fr;align-items:center;gap:58px}.version{display:inline-flex;align-items:center;gap:9px;margin-bottom:25px;font:12px var(--mono);color:var(--muted)}.version::before{content:"";width:7px;height:7px;border-radius:50%;background:#528bdf}.hero h1{font-size:clamp(39px,4.1vw,58px);font-weight:700;line-height:1.23}.hero h1 span{color:var(--blue)}.intro{margin-top:25px;color:var(--muted);font-size:15px;max-width:390px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:29px}.cta{display:inline-flex;align-items:center;justify-content:center;gap:20px;border-radius:8px;padding:11px 18px;background:var(--blue);color:white;font-weight:600;font-size:13px;border:1px solid var(--blue)}.cta.secondary{background:transparent;color:var(--ink);border-color:var(--line)}.requirements{font:11px/1.8 var(--mono);color:#7f8a9a;margin-top:16px}
+    .preview{min-width:0;transform:rotate(-1deg)}.app{border:1px solid #ccd5e3;border-radius:12px;background:#fff;box-shadow:0 22px 58px #223e6c18,0 3px 10px #223e6c08;overflow:hidden}.caption{height:40px;background:#f0f4fa;display:flex;align-items:center;padding:0 14px;gap:7px;font-size:11px;color:#65748c}.caption img{width:18px}.windowkeys{margin-left:auto;letter-spacing:15px;font-family:var(--mono);color:#8994a6}.appbody{padding:22px}.apphead{display:flex;align-items:baseline;gap:9px}.apphead strong{font-size:23px;letter-spacing:-.04em}.apphead span{font:10px var(--mono);color:#97a2b2}.appsub{font-size:11px;color:var(--muted);margin-top:2px}.appbar{display:flex;gap:18px;font-size:11px;border-bottom:1px solid #e3e9f2;margin-top:20px;padding-bottom:9px}.active{color:var(--blue);font-weight:650}.demo-table{overflow-x:auto;margin-top:10px}.demo-table table{width:100%;border-collapse:collapse;text-align:left;white-space:nowrap;font-size:11px}.demo-table th{font-weight:400;color:#7e8da2;border-bottom:1px solid #e5ebf3}.demo-table th button{font-size:10px;border:0;background:transparent;color:inherit;padding:8px 0;text-align:left}.demo-table td{padding:13px 6px 13px 0;border-bottom:1px solid #edf0f5}.demo-table td:first-child{width:22px}.demo-table input{accent-color:var(--blue);width:12px;height:12px;vertical-align:middle}.demo-table tr.chosen{background:#f2f6ff}.path{font:10px var(--mono);color:#7f8da0}.tag{font-size:10px;padding:3px 5px;border-radius:4px;background:#eaf6f1;color:var(--green)}.tag.missing{background:#fcf0e9;color:#b16c43}.tag.protected{background:#edf1f7;color:#748196}.appdetail{padding:12px;margin-top:14px;background:#f7f9fc;border:1px solid #e5ebf4;border-radius:5px;font:10px/1.8 var(--mono);color:#718098}.appfoot{display:flex;align-items:center;justify-content:space-between;padding-top:15px;font-size:10px;color:#7e8c9f}.appfoot b{color:var(--blue);font-weight:500}.preview-note{font-size:11px;color:#8b97a9;text-align:center;margin-top:14px}.preview-note button{border:0;background:transparent;color:var(--blue);padding:0;font-size:11px;text-decoration:underline;text-underline-offset:3px}
+    .strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:22px 0;display:flex;justify-content:space-between;gap:20px;font-size:12px;color:var(--muted)}.strip b{color:var(--ink);margin-right:9px;font-weight:600}.section{padding:85px 0}.section-heading{display:flex;justify-content:space-between;align-items:end;gap:50px;margin-bottom:44px}.section h2{font-size:34px;margin-top:12px}.section-heading>p{font-size:14px;color:var(--muted);max-width:400px}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:44px}.step{border-top:2px solid var(--line);padding-top:20px}.number{font:12px var(--mono);color:#a1aec1}.step img{width:25px;height:25px;display:block;margin:24px 0 15px;opacity:.72}.step h3{font-size:20px;letter-spacing:-.03em}.step p{margin-top:14px;font-size:13px;color:var(--muted)}
+    .scope{background:#eef2f8;border-block:1px solid var(--line)}.scope-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:70px}.scope h2{margin-bottom:20px}.scope-intro{font-size:14px;color:var(--muted);max-width:330px}.rules{margin:0}.rule{display:grid;grid-template-columns:145px 1fr;gap:26px;padding:19px 0;border-bottom:1px solid #d9e1ee;font-size:13px}.rule:first-child{padding-top:0}.rule dt{font-weight:600}.rule dd{margin:0;color:var(--muted)}.rule dd strong{color:var(--ink);font-weight:500}.build-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:72px;margin-top:35px}.terminal{background:#1d2b42;border-radius:11px;color:#d9e5fa;padding:25px 29px;box-shadow:0 12px 25px #1d2b420b}.terminal-top{display:flex;align-items:center;justify-content:space-between;font:10px var(--mono);letter-spacing:.12em;color:#92a7c7;border-bottom:1px solid #3b4a60;padding-bottom:16px}.copy{background:transparent;border:1px solid #54657e;border-radius:5px;padding:3px 9px;color:#d9e5fa;font-size:10px}.terminal pre{font:12px/2 var(--mono);overflow-x:auto;margin:20px 0 0}.terminal .comment{color:#8da3c3}.build-info{font-size:13px;color:var(--muted)}.build-info p+p{margin-top:15px}.build-info code{color:var(--blue);font-size:12px}.build-info a{color:var(--blue);text-decoration:underline;text-underline-offset:3px}.faq{padding-top:0}.faq details{border-bottom:1px solid var(--line);padding:23px 0}.faq summary{cursor:pointer;list-style:none;font-size:14px;font-weight:600;display:flex;justify-content:space-between;gap:20px}.faq summary::after{content:"+";color:var(--blue);font:20px var(--mono)}.faq details[open] summary::after{content:"−"}.faq details p{font-size:13px;color:var(--muted);max-width:790px;margin-top:16px}.faq a{color:var(--blue)}footer{border-top:1px solid var(--line);padding:27px 0 33px}.footer{display:flex;justify-content:space-between;gap:25px;align-items:center;font-size:11px;color:#8793a5}.footer .brand{font-size:16px;color:var(--ink)}.footer .brand img{width:26px;height:26px}.footerlinks{display:flex;gap:20px}
+    @media(max-width:1000px){.hero{gap:28px;padding-block:65px}.hero h1{font-size:43px}.appbody{padding:16px}.scope-grid{gap:40px}.build-grid{gap:35px}.section-heading{gap:25px}.strip{flex-wrap:wrap}.steps{gap:26px}.path{font-size:9px}}
+    @media(max-width:760px){.wrap{width:calc(100% - 38px)}.nav{height:70px;gap:12px}.navlinks{display:none}.repo{margin-left:auto}.hero{grid-template-columns:1fr;padding:49px 0;gap:43px}.hero h1{font-size:43px}.intro{max-width:100%}.preview{transform:none}.strip{justify-content:start;gap:13px 25px}.section{padding:58px 0}.section-heading{display:block;margin-bottom:30px}.section-heading>p{margin-top:18px}.section h2{font-size:29px}.steps,.scope-grid,.build-grid{grid-template-columns:1fr;gap:30px}.step img{margin-top:16px}.rule{grid-template-columns:112px 1fr;gap:18px}.build-grid{margin-top:25px}.faq{padding-top:0}.footer{flex-wrap:wrap}.footerlinks{gap:16px}.footer>small{width:100%}.apphead strong{font-size:21px}.demo-table td{padding-block:12px}.terminal{padding:20px}.terminal pre{font-size:11px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+<header><nav class="wrap nav" aria-label="주요 메뉴">
+  <a class="brand" href="#"><img src="assets/shelltidy.svg" width="38" height="38" alt="">ShellTidy</a>
+  <div class="navlinks"><a href="#features">사용 흐름</a><a href="#scope">정리 범위</a><a href="#build">빌드하기</a></div>
+  <a class="repo" href="https://github.com/deuxdoom/ShellTidy">GitHub <span aria-hidden="true">↗</span></a>
+</nav></header>
+<main class="wrap">
+  <section class="hero" aria-labelledby="hero-title">
+    <div><div class="version">VERSION 0.0.1 · WINDOWS UTILITY</div>
+      <h1 id="hero-title">메뉴는 가볍게.<br><span>선택은 정확하게.</span></h1>
+      <p class="intro">쓰지 않는 앱의 흔적이 우클릭 메뉴에 남아 있나요?<br>실행 경로를 확인하고, 오래된 등록만 골라 정리하세요.</p>
+      <div class="actions"><a class="cta" href="https://github.com/deuxdoom/ShellTidy/releases/latest/download/ShellTidy.exe">EXE 다운로드 <span aria-hidden="true">↓</span></a><a class="cta secondary" href="https://github.com/deuxdoom/ShellTidy">전체 소스 보기 <span aria-hidden="true">↗</span></a></div>
+      <p class="requirements">WINDOWS 10 / 11 x64 &nbsp;·&nbsp; PORTABLE &nbsp;·&nbsp; MIT LICENSE</p>
+    </div>
+    <div class="preview">
+      <div class="app" aria-label="ShellTidy 기능을 설명하는 예시 목록">
+        <div class="caption"><img src="assets/shelltidy.svg" alt="">ShellTidy<span class="windowkeys" aria-hidden="true">− □ ×</span></div>
+        <div class="appbody"><div class="apphead"><strong>ShellTidy</strong><span>0.0.1</span></div><p class="appsub">불필요한 연결 프로그램과 우클릭 메뉴를 정리합니다.</p>
+          <div class="appbar"><span class="active">연결 프로그램</span><span>우클릭 메뉴</span><span>전체</span></div>
+          <div class="demo-table"><table><thead><tr><th aria-label="선택"></th><th aria-sort="ascending"><button type="button" data-sort="name">프로그램 ↑</button></th><th><button type="button" data-sort="status">상태 ↕</button></th><th><button type="button" data-sort="path">실행 경로 ↕</button></th></tr></thead><tbody id="demo-rows">
+            <tr data-name="MarkText" data-status="경로 없음" data-path="F:\OldApps\MarkText"><td><input type="checkbox" aria-label="예시 MarkText 선택"></td><td>MarkText</td><td><span class="tag missing">경로 없음</span></td><td class="path">F:\OldApps\MarkText</td></tr>
+            <tr data-name="Picvium" data-status="시스템 보호" data-path="F:\Apps\Picvium"><td><input type="checkbox" disabled aria-label="현재 기본 앱 Picvium 보호"></td><td>Picvium</td><td><span class="tag protected">시스템 보호</span></td><td class="path">F:\Apps\Picvium</td></tr>
+            <tr class="chosen" data-name="Picvium" data-status="경로 없음" data-path="F:\OldApps\Picvium"><td><input type="checkbox" checked aria-label="예시 오래된 Picvium 선택"></td><td>Picvium</td><td><span class="tag missing">경로 없음</span></td><td class="path">F:\OldApps\Picvium</td></tr>
+          </tbody></table></div>
+          <div class="appdetail">Picvium.Installed.Image.jpg<br>HKCU · OpenWithProgids · .jpg .png .webp .pdf .psd</div>
+          <div class="appfoot"><span id="demo-count" aria-live="polite">예시 항목 3개 · 선택 1개</span><b>선택한 등록만 삭제</b></div>
+        </div>
+      </div>
+      <p class="preview-note">설명용 예시입니다. <button type="button" id="sort-hint">열 제목을 눌러 정렬해 보세요.</button></p>
+    </div>
+  </section>
+  <div class="strip" aria-label="기본 특성"><span><b>단일 EXE</b>설치 과정 없이</span><span><b>C++ / Win32</b>추가 런타임 없이</span><span><b>로컬 처리</b>앱 안에서 검색·정리</span><span><b>원본 백업</b>삭제하기 전에</span></div>
+  <section class="section" id="features" aria-labelledby="features-title">
+    <div class="section-heading"><div><p class="eyebrow">A CLEARER CONTEXT MENU</p><h2 id="features-title">확인하고, 고르고, 정리하세요.</h2></div><p>앱 이름이 같아도 실행 경로가 다르면 다른 등록입니다. 지금 쓰는 등록과 예전 흔적을 구분할 수 있게 보여 줍니다.</p></div>
+    <div class="steps">
+      <article class="step"><span class="number">01 / INSPECT</span><img src="assets/fluent/backups.svg" alt=""><h3>어디에 남았는지 확인</h3><p>모든 파일 확장자를 검색하고 연결 프로그램과 일반 셸 메뉴를 한 창에 표시합니다. 상세 정보에서 ProgID와 실제 레지스트리 위치를 확인하세요.</p></article>
+      <article class="step"><span class="number">02 / SELECT</span><img src="assets/fluent/delete.svg" alt=""><h3>오래된 경로만 선택</h3><p>경로 없음·중복 의심·확인 필요 필터로 목록을 좁히세요. 같은 실행 명령의 여러 확장자 참조는 함께 다루고, 선택한 등록만 백업 후 삭제합니다.</p></article>
+      <article class="step"><span class="number">03 / RESTORE</span><img src="assets/fluent/restore.svg" alt=""><h3>필요하면 마지막 작업 복원</h3><p>잘못 고른 등록은 백업에서 복원하세요. 현재 값과 충돌하면 덮어쓰지 않고 알려 드립니다. 변경 후 탐색기 재시작은 직접 선택할 수 있습니다.</p></article>
+    </div>
+  </section>
+</main>
+<section class="scope" id="scope" aria-labelledby="scope-title"><div class="wrap section scope-grid">
+  <div><p class="eyebrow">A PRECISE SCOPE</p><h2 id="scope-title">바꾸는 범위가<br>분명합니다.</h2><p class="scope-intro">등록 정리와 앱 제거는 다른 작업입니다. 실행 파일·사용자 문서·설치 디렉터리는 건드리지 않습니다.</p></div>
+  <dl class="rules"><div class="rule"><dt>연결 프로그램</dt><dd>OpenWithList, OpenWithProgids, Applications와 파일 연결 참조를 정리합니다.</dd></div><div class="rule"><dt>일반 셸 메뉴</dt><dd>개별 shell verb와 ContextMenuHandlers 참조를 정리합니다. 공유 CLSID는 보존합니다.</dd></div><div class="rule"><dt>현재 기본 앱</dt><dd><strong>보호 항목으로 표시합니다.</strong> UserChoice를 직접 수정하지 않습니다.</dd></div><div class="rule"><dt>Windows 11 최신 메뉴</dt><dd>ExplorerCommand와 패키지 COM 후보는 조회 전용입니다. 동적 패키지 메뉴 전체 제거를 지원하지 않습니다.</dd></div><div class="rule"><dt>탐색기 자동 재시작</dt><dd><strong>기본 체크 해제.</strong> 체크한 작업이 실제 성공했을 때만 재시작하며, 파일 작업 중단 가능성을 미리 안내합니다.</dd></div></dl>
+</div></section>
+<div class="wrap">
+  <section class="section" id="build" aria-labelledby="build-title">
+    <p class="eyebrow">OPEN SOURCE · VERSION 0.0.1</p><h2 id="build-title">소스부터 실행 파일까지.</h2>
+    <div class="build-grid"><div class="terminal"><div class="terminal-top"><span>POWERSHELL</span><button class="copy" id="copy-build" type="button">명령 복사</button></div><pre id="build-command">git clone https://github.com/deuxdoom/ShellTidy.git
+cd ShellTidy
+msbuild ShellTidy.vcxproj /p:Configuration=Release /p:Platform=x64
+
+<span class="comment"># 빌드 결과</span>
+.\dist\ShellTidy.exe</pre></div><div class="build-info"><p>Visual Studio C++ x64 빌드 도구와 Windows SDK가 필요합니다. 정적 런타임을 포함하므로 완성된 EXE를 실행할 때 별도 런타임 설치가 필요하지 않습니다.</p><p>백업은 기본적으로 <code>%LOCALAPPDATA%\ShellTidy\Backups</code>에 저장합니다. 삭제 전 디스크에 백업을 확정하고, 복원할 때 현재 값과 충돌하는지 확인합니다.</p><p><a href="README.md">사용 방법과 빌드 안내 ↗</a><br><a href="TESTING.md">검증 결과와 아직 확인할 항목 ↗</a></p></div></div>
+  </section>
+  <section class="section faq" aria-label="자주 묻는 질문">
+    <details><summary>관리자 권한으로 실행해야 하나요?</summary><p>HKCU 항목의 일반적인 정리에는 필요하지 않습니다. 쓰기 권한이 부족한 등록을 처리할 때만 UAC 작업자를 요청합니다. 사용자 하이브 혼동을 막기 위해 같은 Windows 계정에서의 승격만 지원합니다.</p></details>
+    <details><summary>MarkText나 Obsidian의 파일도 지워지나요?</summary><p>선택한 Windows 연결 등록만 정리합니다. 프로그램 설치 파일, Markdown 문서, Obsidian Vault는 삭제하지 않습니다. 앱이 다시 등록하거나 다른 출처가 남아 있으면 메뉴에 다시 나타날 수 있습니다.</p></details>
+    <details><summary>어디까지 테스트되었나요?</summary><p>격리 레지스트리에서 삭제·복원·기본 앱 보호·충돌·백업 실패 등 자동 테스트를 수행했습니다. 실제 Explorer 종료/재실행과 대화형 UAC, Windows 10 실기, 전체 DPI 화면 검수는 별도의 수동 검증 대상입니다. 자세한 내용은 <a href="TESTING.md">검증 기록</a>에서 확인할 수 있습니다.</p></details>
+  </section>
+</div>
+<footer><div class="wrap footer"><a class="brand" href="#"><img src="assets/shelltidy.svg" alt="">ShellTidy</a><small>© 2026 SAKURA · MIT License · Windows utility</small><div class="footerlinks"><a href="https://github.com/deuxdoom/ShellTidy">GitHub ↗</a><a href="LICENSE">MIT 라이선스</a><a href="THIRD_PARTY_NOTICES.md">아이콘 고지</a></div></div></footer>
+<script>
+  const demoRows=document.querySelector('#demo-rows');
+  let sortKey='name', ascending=true;
+  const collator=new Intl.Collator('ko',{numeric:true,sensitivity:'base'});
+  function sortDemo(key){
+    ascending=key===sortKey?!ascending:true;sortKey=key;
+    [...demoRows.rows].sort((a,b)=>{
+      const cmp=collator.compare(a.dataset[key],b.dataset[key]);
+      return ascending?cmp:-cmp;
+    }).forEach(row=>demoRows.append(row));
+    document.querySelectorAll('[data-sort]').forEach(button=>{
+      const active=button.dataset.sort===key;
+      button.textContent={name:'프로그램',status:'상태',path:'실행 경로'}[button.dataset.sort]+' '+(active?(ascending?'↑':'↓'):'↕');
+      if(active)button.parentElement.setAttribute('aria-sort',ascending?'ascending':'descending');
+      else button.parentElement.removeAttribute('aria-sort');
+    });
+  }
+  document.querySelectorAll('[data-sort]').forEach(button=>button.addEventListener('click',()=>sortDemo(button.dataset.sort)));
+  document.querySelector('#sort-hint').addEventListener('click',()=>{sortDemo('name');document.querySelector('[data-sort="name"]').focus();});
+  demoRows.addEventListener('change',()=>{
+    demoRows.querySelectorAll('tr').forEach(row=>row.classList.toggle('chosen',row.querySelector('input').checked));
+    document.querySelector('#demo-count').textContent='예시 항목 3개 · 선택 '+demoRows.querySelectorAll('input:checked').length+'개';
+  });
+  document.querySelector('#copy-build').addEventListener('click',async event=>{
+    const button=event.currentTarget;
+    try {await navigator.clipboard.writeText('git clone https://github.com/deuxdoom/ShellTidy.git\ncd ShellTidy\nmsbuild ShellTidy.vcxproj /p:Configuration=Release /p:Platform=x64');button.textContent='복사됨';}
+    catch {button.textContent='명령을 선택해 복사';const range=document.createRange();range.selectNodeContents(document.querySelector('#build-command'));const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);}
+  });
+</script>
+</body>
+</html>
