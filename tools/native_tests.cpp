@@ -1,4 +1,4 @@
-#include "shelltidy.h"
+#include "../src/shelltidy.h"
 #include <fstream>
 #include <algorithm>
 #include <aclapi.h>

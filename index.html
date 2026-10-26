@@ -8,6 +8,12 @@
   <meta property="og:title" content="ShellTidy — 메뉴는 가볍게, 선택은 정확하게">
   <meta property="og:description" content="Open With와 우클릭 메뉴를 정리하는 Windows용 오픈소스 유틸리티. 단일 EXE, 자동 백업, 선택 삭제.">
   <meta property="og:type" content="website">
+  <meta property="og:image" content="https://deuxdoom.github.io/ShellTidy/assets/social-preview.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta property="og:image:alt" content="ShellTidy — A cleaner Windows context menu. Remove stale Open With registrations.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://deuxdoom.github.io/ShellTidy/assets/social-preview.png">
   <title>ShellTidy — 메뉴는 가볍게, 선택은 정확하게</title>
   <link rel="icon" href="assets/shelltidy.svg" type="image/svg+xml">
   <style>
@@ -21,6 +27,7 @@
     @media(max-width:1000px){.hero{gap:28px;padding-block:65px}.hero h1{font-size:43px}.appbody{padding:16px}.scope-grid{gap:40px}.build-grid{gap:35px}.section-heading{gap:25px}.strip{flex-wrap:wrap}.steps{gap:26px}.path{font-size:9px}}
     @media(max-width:760px){.wrap{width:calc(100% - 38px)}.nav{height:70px;gap:12px}.navlinks{display:none}.repo{margin-left:auto}.hero{grid-template-columns:1fr;padding:49px 0;gap:43px}.hero h1{font-size:43px}.intro{max-width:100%}.preview{transform:none}.strip{justify-content:start;gap:13px 25px}.section{padding:58px 0}.section-heading{display:block;margin-bottom:30px}.section-heading>p{margin-top:18px}.section h2{font-size:29px}.steps,.scope-grid,.build-grid{grid-template-columns:1fr;gap:30px}.step img{margin-top:16px}.rule{grid-template-columns:112px 1fr;gap:18px}.build-grid{margin-top:25px}.faq{padding-top:0}.footer{flex-wrap:wrap}.footerlinks{gap:16px}.footer>small{width:100%}.apphead strong{font-size:21px}.demo-table td{padding-block:12px}.terminal{padding:20px}.terminal pre{font-size:11px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    .screen-figure{margin:0;padding:20px;background:#edf2f9;border:1px solid var(--line);border-radius:12px}.screen-figure img{display:block;width:100%;height:auto;border-radius:7px;box-shadow:0 10px 35px #253d6412}.screen-figure figcaption{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:11px;padding-top:15px}.screen-figure figcaption a{color:var(--blue)}@media(max-width:760px){.screen-figure{padding:9px}.screen-figure figcaption{font-size:10px;padding:10px 3px 3px}}
   </style>
 </head>
 <body>
@@ -43,11 +50,11 @@
         <div class="appbody"><div class="apphead"><strong>ShellTidy</strong><span>0.0.1</span></div><p class="appsub">불필요한 연결 프로그램과 우클릭 메뉴를 정리합니다.</p>
           <div class="appbar"><span class="active">연결 프로그램</span><span>우클릭 메뉴</span><span>전체</span></div>
           <div class="demo-table"><table><thead><tr><th aria-label="선택"></th><th aria-sort="ascending"><button type="button" data-sort="name">프로그램 ↑</button></th><th><button type="button" data-sort="status">상태 ↕</button></th><th><button type="button" data-sort="path">실행 경로 ↕</button></th></tr></thead><tbody id="demo-rows">
-            <tr data-name="MarkText" data-status="경로 없음" data-path="F:\OldApps\MarkText"><td><input type="checkbox" aria-label="예시 MarkText 선택"></td><td>MarkText</td><td><span class="tag missing">경로 없음</span></td><td class="path">F:\OldApps\MarkText</td></tr>
-            <tr data-name="Picvium" data-status="시스템 보호" data-path="F:\Apps\Picvium"><td><input type="checkbox" disabled aria-label="현재 기본 앱 Picvium 보호"></td><td>Picvium</td><td><span class="tag protected">시스템 보호</span></td><td class="path">F:\Apps\Picvium</td></tr>
-            <tr class="chosen" data-name="Picvium" data-status="경로 없음" data-path="F:\OldApps\Picvium"><td><input type="checkbox" checked aria-label="예시 오래된 Picvium 선택"></td><td>Picvium</td><td><span class="tag missing">경로 없음</span></td><td class="path">F:\OldApps\Picvium</td></tr>
+            <tr data-name="Noteleaf" data-status="경로 없음" data-path="F:\OldApps\Noteleaf"><td><input type="checkbox" aria-label="예시 Noteleaf 선택"></td><td>Noteleaf</td><td><span class="tag missing">경로 없음</span></td><td class="path">F:\OldApps\Noteleaf</td></tr>
+            <tr data-name="AsterView" data-status="시스템 보호" data-path="F:\Apps\AsterView"><td><input type="checkbox" disabled aria-label="현재 기본 앱 AsterView 보호"></td><td>AsterView</td><td><span class="tag protected">시스템 보호</span></td><td class="path">F:\Apps\AsterView</td></tr>
+            <tr class="chosen" data-name="AsterView" data-status="경로 없음" data-path="F:\OldApps\AsterView"><td><input type="checkbox" checked aria-label="예시 오래된 AsterView 선택"></td><td>AsterView</td><td><span class="tag missing">경로 없음</span></td><td class="path">F:\OldApps\AsterView</td></tr>
           </tbody></table></div>
-          <div class="appdetail">Picvium.Installed.Image.jpg<br>HKCU · OpenWithProgids · .jpg .png .webp .pdf .psd</div>
+          <div class="appdetail">AsterView.Legacy.Image<br>HKCU · OpenWithProgids · .jpg .png .webp .pdf .psd</div>
           <div class="appfoot"><span id="demo-count" aria-live="polite">예시 항목 3개 · 선택 1개</span><b>선택한 등록만 삭제</b></div>
         </div>
       </div>
@@ -55,6 +62,13 @@
     </div>
   </section>
   <div class="strip" aria-label="기본 특성"><span><b>단일 EXE</b>설치 과정 없이</span><span><b>C++ / Win32</b>추가 런타임 없이</span><span><b>로컬 처리</b>앱 안에서 검색·정리</span><span><b>원본 백업</b>삭제하기 전에</span></div>
+  <section class="section" id="screenshots" aria-labelledby="screenshots-title">
+    <div class="section-heading"><div><p class="eyebrow">UI PREVIEW</p><h2 id="screenshots-title">정리할 항목을 한눈에.</h2></div><p>현재 UI 배치에 가상의 앱과 경로를 넣어 재구성한 우클릭 메뉴 화면입니다.</p></div>
+    <figure class="screen-figure">
+      <a href="assets/screenshots/context-menus.png" target="_blank" rel="noopener"><img src="assets/screenshots/context-menus.png" width="1416" height="960" loading="lazy" alt="가상의 앱과 경로로 구성한 ShellTidy 우클릭 메뉴 화면"></a>
+      <figcaption><span>우클릭 메뉴 · 예시 데이터로 구성한 UI 미리보기</span><a href="assets/screenshots/context-menus.png" target="_blank" rel="noopener">원본 크기로 보기 ↗</a></figcaption>
+    </figure>
+  </section>
   <section class="section" id="features" aria-labelledby="features-title">
     <div class="section-heading"><div><p class="eyebrow">A CLEARER CONTEXT MENU</p><h2 id="features-title">확인하고, 고르고, 정리하세요.</h2></div><p>앱 이름이 같아도 실행 경로가 다르면 다른 등록입니다. 지금 쓰는 등록과 예전 흔적을 구분할 수 있게 보여 줍니다.</p></div>
     <div class="steps">
@@ -80,11 +94,11 @@ msbuild ShellTidy.vcxproj /p:Configuration=Release /p:Platform=x64
   </section>
   <section class="section faq" aria-label="자주 묻는 질문">
     <details><summary>관리자 권한으로 실행해야 하나요?</summary><p>HKCU 항목의 일반적인 정리에는 필요하지 않습니다. 쓰기 권한이 부족한 등록을 처리할 때만 UAC 작업자를 요청합니다. 사용자 하이브 혼동을 막기 위해 같은 Windows 계정에서의 승격만 지원합니다.</p></details>
-    <details><summary>MarkText나 Obsidian의 파일도 지워지나요?</summary><p>선택한 Windows 연결 등록만 정리합니다. 프로그램 설치 파일, Markdown 문서, Obsidian Vault는 삭제하지 않습니다. 앱이 다시 등록하거나 다른 출처가 남아 있으면 메뉴에 다시 나타날 수 있습니다.</p></details>
+    <details><summary>Noteleaf나 Obsidian의 파일도 지워지나요?</summary><p>선택한 Windows 연결 등록만 정리합니다. 프로그램 설치 파일, Markdown 문서, Obsidian Vault는 삭제하지 않습니다. 앱이 다시 등록하거나 다른 출처가 남아 있으면 메뉴에 다시 나타날 수 있습니다.</p></details>
     <details><summary>어디까지 테스트되었나요?</summary><p>격리 레지스트리에서 삭제·복원·기본 앱 보호·충돌·백업 실패 등 자동 테스트를 수행했습니다. 실제 Explorer 종료/재실행과 대화형 UAC, Windows 10 실기, 전체 DPI 화면 검수는 별도의 수동 검증 대상입니다. 자세한 내용은 <a href="TESTING.md">검증 기록</a>에서 확인할 수 있습니다.</p></details>
   </section>
 </div>
-<footer><div class="wrap footer"><a class="brand" href="#"><img src="assets/shelltidy.svg" alt="">ShellTidy</a><small>© 2026 SAKURA · MIT License · Windows utility</small><div class="footerlinks"><a href="https://github.com/deuxdoom/ShellTidy">GitHub ↗</a><a href="LICENSE">MIT 라이선스</a><a href="THIRD_PARTY_NOTICES.md">아이콘 고지</a></div></div></footer>
+<footer><div class="wrap footer"><a class="brand" href="#"><img src="assets/shelltidy.svg" alt="">ShellTidy</a><small>© 2026 SAKURA · MIT License · Windows utility</small><div class="footerlinks"><a href="https://github.com/deuxdoom/ShellTidy">GitHub ↗</a><a href="CHANGELOG.md">변경 내역</a><a href="LICENSE">MIT 라이선스</a><a href="THIRD_PARTY_NOTICES.md">아이콘 고지</a></div></div></footer>
 <script>
   const demoRows=document.querySelector('#demo-rows');
   let sortKey='name', ascending=true;

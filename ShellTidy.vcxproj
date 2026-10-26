@@ -52,7 +52,7 @@
     <ClCompile Include="src\operations.cpp" />
     <ClCompile Include="src\registry.cpp" />
     <ClCompile Include="src\scanner.cpp" />
-    <ClCompile Include="src\tests.cpp" />
+    <ClCompile Include="tools\native_tests.cpp" />
     <ClCompile Include="src\ui.cpp" />
     <ClCompile Include="src\ui_support.cpp" />
     <ClCompile Include="src\windows.cpp" />

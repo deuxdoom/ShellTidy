@@ -20,6 +20,7 @@
   <a href="#build">직접 빌드</a> &nbsp;·&nbsp;
   <a href="#backup">백업과 복원</a> &nbsp;·&nbsp;
   <a href="#limits">지원 범위</a> &nbsp;·&nbsp;
+  <a href="CHANGELOG.md">변경 내역</a> &nbsp;·&nbsp;
   <a href="index.html">소개 페이지 소스</a>
 </p>
 
@@ -35,6 +36,12 @@
 
 **단일 EXE**로 실행하며 설치 과정이나 .NET·Python·VC++ 재배포 패키지가 필요하지 않습니다.
 실행 파일에는 정적 MSVC 런타임과 아이콘이 들어 있습니다. Windows 기본 시스템 DLL은 사용합니다.
+
+## 화면 미리보기
+
+현재 UI 배치를 바탕으로 **가상의 앱 이름·경로·등록으로 재구성한 예시 화면**입니다.
+
+![우클릭 메뉴 목록 — 예시 데이터로 구성한 UI](assets/screenshots/context-menus.png)
 
 <a id="features"></a>
 
@@ -109,8 +116,10 @@ Visual Studio 개발자 PowerShell에서 위 명령을 실행하거나 `ShellTid
 Release / x64로 빌드하세요. 결과는 **`dist/ShellTidy.exe`**, 중간 파일은 `build/`에 생성됩니다.
 `/std:c++20 /O2 /MT`를 사용하며 별도 라이브러리 설치가 필요하지 않습니다.
 개발 중 C 드라이브에 임시 파일을 만들지 않으려면 빌드 전에 `$env:TEMP`와 `$env:TMP`를
-F 드라이브의 작업 디렉터리로 지정하세요. 로컬 편의 스크립트 `build.ps1`은 커밋 제외 대상이며
-공개 소스 빌드에는 위 Visual Studio 프로젝트를 사용합니다.
+F 드라이브의 작업 디렉터리로 지정하세요. 프로젝트 전용 도구는 `tools/`에 모았습니다.
+로컬 도구 준비·빌드·검증·이미지 재생성 방법은 [tools/README.md](tools/README.md)를 참고하세요.
+개발 PC에서는 Python·Node·Git·MSVC·SDK도 `tools/runtime`, `tools/vendor`, `tools/toolchain`에
+준비한 복사본으로 실행합니다.
 
 격리 레지스트리 테스트까지 실행하려면:
 
@@ -128,7 +137,7 @@ $test.ExitCode
 검증 범위와 수동 확인 항목은 [TESTING.md](TESTING.md)에 기록합니다.
 
 언어를 직접 확인할 때는 `--korean`, `--english`를 사용할 수 있습니다.
-아이콘 소스와 개발용 재생성 스크립트는 `assets/` 및 `tools/generate_icons.py`에 있습니다.
+아이콘·Social Preview·가상 UI 이미지 원본은 `assets/`, 재생성 스크립트는 `tools/`에 있습니다.
 이미 생성된 ICO가 포함되어 있으므로 일반 EXE 빌드에 Python은 필요하지 않습니다.
 
 <a id="limits"></a>

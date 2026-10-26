@@ -51,5 +51,7 @@ for ref in page.references:
         assert ref == "#" or ref[1:] in page.ids, f"Missing anchor: {ref}"
     else:
         assert (ROOT / ref.split("#")[0]).is_file(), f"Missing local asset: {ref}"
-subprocess.run(["node", "--check"], input="\n".join(page.scripts), text=True, check=True, cwd=ROOT)
+node = ROOT / "tools" / "runtime" / "node" / "node.exe"
+assert node.is_file(), "Run tools/setup-local-tools.ps1 first"
+subprocess.run([str(node), "--check"], input="\n".join(page.scripts), text=True, check=True, cwd=ROOT)
 print(f"PASS HTML structure, {len(page.references)} links/assets, image alternatives, JavaScript syntax")

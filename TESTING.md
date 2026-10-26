@@ -4,7 +4,8 @@
 
 - Windows 11 x64 개발 PC, Visual Studio 2026 Insiders, MSVC 14.52.37025.
 - Windows SDK 10.0.26100.0 / C++20 / Release x64 / `/O2 /MT /W4`.
-- `build.ps1 -Test`: 테스트별 백업은 F 드라이브에 생성.
+- `tools/test.ps1`, `tools/build.ps1 -Test`: 테스트별 백업은 `tools/output`에 생성.
+- 로컬 검증은 `tools/runtime`의 Python·Node·Git과 `tools/toolchain`의 MSVC·SDK로 실행.
 - 테스트 등록은 `HKCU\Software\ShellTidy\Tests\Run-<PID>` 아래에서 생성하고 정리.
 - 실제 사용자 앱 등록 삭제 및 실제 Explorer 종료 테스트는 수행하지 않음.
 
@@ -27,12 +28,16 @@
 - 긴 팝업 본문의 크기/줄 수 제한, 음수 좌표의 모니터 중앙 배치와 작업 영역 경계 보정.
 - 동일 사용자/세션 중복 실행 잠금과 마지막 핸들 종료 시 잠금 해제.
 
-정확한 실행 개수와 결과는 `build/test-results.txt`에 생성됩니다.
+정확한 실행 개수와 결과는 `tools/output/test-results.txt`에 생성됩니다.
+GitHub Actions에서는 `build/test-results.txt`를 CI 산출물로 보관합니다.
 자동 테스트가 통과해도 아래 수동 확인까지 통과했다고 의미하지 않습니다.
 
 최종 자동 테스트 결과: **50 passed, 0 failed** (2026-10-26).
 
 ## UI 확인
+
+README와 소개 페이지의 UI 이미지는 사용자의 요청에 따라 가상 앱/경로를 넣어 재구성했습니다.
+이 미리보기는 실제 사용자 설치 목록을 사용하지 않으며, 실기 검증 증거로 간주하지 않습니다.
 
 실제 Windows 11에서 시작, 실제 등록 목록 표시, 한국어 컨트롤과 상세 정보 영역을 확인했습니다.
 사용자의 드래그 끊김 제보 후 부모의 `WS_CLIPCHILDREN`, 자식의 `WS_CLIPSIBLINGS`,

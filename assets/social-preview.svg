@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <title>ShellTidy — Windows Context Menu Cleaner</title>
+  <desc>English social card. Important content stays inside the template's 80-pixel safe margin.</desc>
+  <defs>
+    <linearGradient id="card-background" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F0F5FD"/>
+    </linearGradient>
+    <radialGradient id="card-glow"><stop stop-color="#CFE1FF" stop-opacity=".7"/><stop offset="1" stop-color="#EAF2FF" stop-opacity="0"/></radialGradient>
+    <filter id="menu-shadow" x="-25%" y="-25%" width="150%" height="165%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#385985" flood-opacity=".12"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#385985" flood-opacity=".06"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="640" fill="url(#card-background)"/>
+  <ellipse cx="1034" cy="331" rx="390" ry="370" fill="url(#card-glow)"/>
+  <path d="M0 606H1280" stroke="#DFE8F4"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="80" y="103" font-size="13" font-weight="600" letter-spacing="2.4" fill="#356DE1">WINDOWS CONTEXT MENU CLEANER</text>
+    <svg xmlns="http://www.w3.org/2000/svg" width="76" height="76" viewBox="0 0 64 64" fill="none" x="80" y="139">
+  <title>ShellTidy</title>
+  <desc>A context menu with application rows and a remove badge.</desc>
+  <defs>
+    <linearGradient id="tile" x1="8" y1="4" x2="58" y2="64" gradientUnits="userSpaceOnUse"><stop stop-color="#F9FCFF" /><stop offset="1" stop-color="#DFEAF8" /></linearGradient>
+    <linearGradient id="blue" x1="10" y1="8" x2="43" y2="48" gradientUnits="userSpaceOnUse"><stop stop-color="#49B3FF" /><stop offset="1" stop-color="#3262D9" /></linearGradient>
+    <linearGradient id="delete" x1="39" y1="35" x2="60" y2="61" gradientUnits="userSpaceOnUse"><stop stop-color="#FA776D" /><stop offset="1" stop-color="#DA424D" /></linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#tile)" />
+  <rect x="2.5" y="2.5" width="59" height="59" rx="14.5" stroke="#C8D8ED" />
+  <rect x="10" y="10" width="41" height="41" rx="8" fill="url(#blue)" />
+  <rect x="14" y="14" width="33" height="33" rx="4.5" fill="#FFFFFF" />
+  <path d="M14 21H47" stroke="#DDE8F6" stroke-width="2" />
+  <circle cx="18" cy="18" r="1" fill="#79A4E7" />
+  <circle cx="22" cy="18" r="1" fill="#79A4E7" />
+  <rect x="18" y="26" width="4" height="4" rx="1" fill="#518CF1" />
+  <rect x="18" y="34" width="4" height="4" rx="1" fill="#518CF1" />
+  <path d="M27 28H40M27 36H35" stroke="#7C94B7" stroke-width="3" stroke-linecap="round" />
+  <circle cx="48" cy="48" r="13.5" fill="#F4F8FF" />
+  <circle cx="48" cy="48" r="11.5" fill="url(#delete)" />
+  <path d="M42 44H54M46 41H50M43.5 45.5L44.2 53.5C44.3 54.4 44.8 55 45.8 55H50.2C51.2 55 51.7 54.4 51.8 53.5L52.5 45.5M46.5 47.5V52M49.5 47.5V52" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
+    <text x="177" y="199" font-size="72" font-weight="700" letter-spacing="-2.8" fill="#1D2B42">ShellTidy</text>
+    <text x="80" y="294" font-size="46" font-weight="600" letter-spacing="-1.3" fill="#1D2B42">A cleaner Windows</text>
+    <text x="80" y="351" font-size="46" font-weight="600" letter-spacing="-1.3" fill="#356DE1">context menu.</text>
+    <text x="80" y="402" font-size="23" fill="#687991">Remove stale Open With registrations.</text>
+
+    <rect x="80" y="442" width="144" height="36" rx="7" fill="#ECF3FF"/>
+    <text x="152" y="466" text-anchor="middle" font-size="14" font-weight="600" fill="#356DE1">Portable EXE</text>
+    <rect x="235" y="442" width="179" height="36" rx="7" fill="#F5F8FC" stroke="#DCE5F1"/>
+    <text x="324.5" y="466" text-anchor="middle" font-size="14" font-weight="600" fill="#60738D">Windows 10/11 x64</text>
+    <rect x="425" y="442" width="133" height="36" rx="7" fill="#F5F8FC" stroke="#DCE5F1"/>
+    <text x="491.5" y="466" text-anchor="middle" font-size="14" font-weight="600" fill="#60738D">MIT License</text>
+
+    <g filter="url(#menu-shadow)">
+      <rect x="816" y="164" width="384" height="326" rx="16" fill="#FFFFFF"/>
+    </g>
+    <rect x="816.5" y="164.5" width="383" height="325" rx="15.5" fill="none" stroke="#D4DFEF"/>
+    <path d="M817 219H1199" stroke="#E5EBF4"/>
+    <text x="841" y="199" font-size="19" font-weight="600" fill="#344762">Open With</text>
+    <circle cx="1158" cy="191" r="2" fill="#99A8BD"/><circle cx="1167" cy="191" r="2" fill="#99A8BD"/><circle cx="1176" cy="191" r="2" fill="#99A8BD"/>
+
+    <rect x="840" y="245" width="19" height="19" rx="4" fill="#ECF3FF" stroke="#AEC7F1"/>
+    <text x="875" y="262" font-size="20" fill="#4C607C">Current app</text>
+    <rect x="1092" y="241" width="82" height="29" rx="6" fill="#EDF7F3"/>
+    <text x="1133" y="261" text-anchor="middle" font-size="14" font-weight="600" fill="#398974">Keep</text>
+
+    <rect x="831" y="287" width="354" height="58" rx="8" fill="#F4F7FE"/>
+    <rect x="840" y="307" width="19" height="19" rx="4" fill="#477DE3"/>
+    <path d="M845 316L849 320L855 312" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="875" y="324" font-size="20" fill="#4C607C">Old app path</text>
+    <rect x="1092" y="303" width="82" height="29" rx="6" fill="#FCEFEB"/>
+    <text x="1133" y="323" text-anchor="middle" font-size="14" font-weight="600" fill="#BD6259">Remove</text>
+
+    <rect x="831" y="350" width="354" height="58" rx="8" fill="#F4F7FE"/>
+    <rect x="840" y="370" width="19" height="19" rx="4" fill="#477DE3"/>
+    <path d="M845 379L849 383L855 375" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="875" y="387" font-size="20" fill="#4C607C">Unused entry</text>
+    <rect x="1092" y="366" width="82" height="29" rx="6" fill="#FCEFEB"/>
+    <text x="1133" y="386" text-anchor="middle" font-size="14" font-weight="600" fill="#BD6259">Remove</text>
+
+    <path d="M840 428H1176" stroke="#E5EBF4"/>
+    <text x="1008" y="461" text-anchor="middle" font-size="15" font-weight="600" fill="#6D7F97">Back up. Clean up. Restore.</text>
+    <text x="80" y="544" font-size="18" fill="#7C8BA2">github.com/deuxdoom/ShellTidy</text>
+    <text x="1200" y="544" text-anchor="end" font-size="16" font-weight="600" fill="#6D7F97">v0.0.1</text>
+  </g>
+</svg>
