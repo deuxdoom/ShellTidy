@@ -126,7 +126,7 @@ bool waitShell(unsigned ms)
 }
 struct Packet
 {
-    DWORD magic = 0x53545031, mode = 0, success = 0, failed = 0, conflicts = 0, length = 0;
+    DWORD magic = 0x53545032, mode = 0, success = 0, failed = 0, conflicts = 0, changed = 0, length = 0;
 };
 void pipeIO(HANDLE pipe, void *data, DWORD size, bool write)
 {
@@ -134,6 +134,8 @@ void pipeIO(HANDLE pipe, void *data, DWORD size, bool write)
     while (size)
     {
         Handle event(CreateEventW(nullptr, TRUE, FALSE, nullptr));
+        if (!event.h)
+            throw Error("Elevation I/O event");
         OVERLAPPED ov{};
         ov.hEvent = event.h;
         DWORD done = 0;
@@ -159,16 +161,18 @@ void pipeIO(HANDLE pipe, void *data, DWORD size, bool write)
 }
 void sendPacket(HANDLE pipe, Packet p, const std::wstring &text)
 {
-    p.length = static_cast<DWORD>(text.size());
+    auto bounded =
+        text.size() > 500000 ? text.substr(0, 499900) + L"\r\nDetails truncated / 상세 내용 일부 생략" : text;
+    p.length = static_cast<DWORD>(bounded.size());
     pipeIO(pipe, &p, sizeof(p), true);
     if (p.length)
-        pipeIO(pipe, const_cast<wchar_t *>(text.data()), p.length * 2, true);
+        pipeIO(pipe, bounded.data(), p.length * 2, true);
 }
 std::pair<Packet, std::wstring> receivePacket(HANDLE pipe)
 {
     Packet p;
     pipeIO(pipe, &p, sizeof(p), false);
-    if (p.magic != 0x53545031 || p.length > 500000)
+    if (p.magic != 0x53545032 || p.length > 500000)
         throw Error("Invalid elevation response", ERROR_INVALID_DATA);
     std::wstring text(p.length, L'\0');
     if (p.length)
@@ -201,6 +205,44 @@ HANDLE createInstanceLock(const std::wstring &suffix, bool &alreadyRunning)
         throw Error("Single instance lock", error);
     return mutex;
 }
+bool needsElevation(const Journal &j, bool restoring)
+{
+    if (isElevated())
+        return false;
+    for (const auto &m : j.items)
+    {
+        if (restoring && m.phase != 1 && m.phase != 2)
+            continue;
+        try
+        {
+            auto t = m.target;
+            if (!restoring && t.tree)
+            {
+                auto parent = t;
+                parent.path = t.path.substr(0, t.path.find_last_of(L'\\'));
+                auto key = openKey(parent, KEY_READ | KEY_WRITE | DELETE);
+            }
+            // Deleted keys do not exist during restore. Check the nearest surviving parent.
+            for (;;)
+            {
+                auto key = openKey(t, KEY_WRITE | (!restoring && t.tree ? DELETE : 0));
+                if (key.h)
+                    break;
+                auto cut = t.path.find_last_of(L'\\');
+                if (cut == t.path.npos)
+                    throw Error("Registry ancestor unavailable", ERROR_PATH_NOT_FOUND);
+                t.path = t.path.substr(0, cut);
+            }
+        }
+        catch (const Error &e)
+        {
+            if (e.code == ERROR_ACCESS_DENIED)
+                return true;
+            throw;
+        }
+    }
+    return false;
+}
 void activateExistingInstance()
 {
     for (int i = 0; i < 20; ++i)
@@ -221,10 +263,9 @@ void activateExistingInstance()
         Sleep(50);
     }
 }
-Outcome executeElevated(const std::vector<Entry> &entries, bool restoring, const std::wstring &backup,
-                        HWND owner)
+Outcome executeElevated(Journal &j, bool restoring, HWND owner)
 {
-    Journal j = restoring ? loadJournal(backup) : prepare(entries);
+    // The caller already prepared and validated this journal; the worker rescans before mutating.
     if (!restoring)
         saveJournal(j);
     GUID guid;
@@ -245,6 +286,8 @@ Outcome executeElevated(const std::vector<Entry> &entries, bool restoring, const
     if (pipe.h == INVALID_HANDLE_VALUE)
         throw Error("Create elevation pipe");
     Handle event(CreateEventW(nullptr, TRUE, FALSE, nullptr));
+    if (!event.h)
+        throw Error("Elevation connection event");
     OVERLAPPED ov{};
     ov.hEvent = event.h;
     BOOL connected = ConnectNamedPipe(pipe.h, &ov);
@@ -262,9 +305,14 @@ Outcome executeElevated(const std::vector<Entry> &entries, bool restoring, const
     si.nShow = SW_HIDE;
     if (!ShellExecuteExW(&si))
     {
-        CancelIoEx(pipe.h, &ov);
-        WaitForSingleObject(event.h, 1000);
-        throw Error("UAC canceled or denied");
+        DWORD error = GetLastError();
+        if (connectError == ERROR_IO_PENDING)
+        {
+            CancelIoEx(pipe.h, &ov);
+            DWORD transferred = 0;
+            GetOverlappedResult(pipe.h, &ov, &transferred, TRUE);
+        }
+        throw Error("UAC canceled or denied", error);
     }
     Handle process(si.hProcess);
     if (connectError == ERROR_IO_PENDING)
@@ -274,9 +322,13 @@ Outcome executeElevated(const std::vector<Entry> &entries, bool restoring, const
         if (wait != WAIT_OBJECT_0)
         {
             CancelIoEx(pipe.h, &ov);
-            WaitForSingleObject(event.h, 1000);
+            DWORD transferred = 0;
+            GetOverlappedResult(pipe.h, &ov, &transferred, TRUE);
             throw Error("Elevation connection failed", ERROR_TIMEOUT);
         }
+        DWORD transferred = 0;
+        if (!GetOverlappedResult(pipe.h, &ov, &transferred, FALSE))
+            throw Error("Elevation connection result");
     }
     ULONG client = 0;
     if (!GetNamedPipeClientProcessId(pipe.h, &client) || client != GetProcessId(process.h))
@@ -289,6 +341,7 @@ Outcome executeElevated(const std::vector<Entry> &entries, bool restoring, const
     out.success = response.success;
     out.failed = response.failed;
     out.conflicts = response.conflicts;
+    out.registryChanged = response.changed != 0;
     out.detail = message;
     out.backup = j.file;
     return out;
@@ -331,6 +384,7 @@ int elevatedWorker(const std::wstring &name)
         response.success = out.success;
         response.failed = out.failed;
         response.conflicts = out.conflicts;
+        response.changed = out.registryChanged;
         sendPacket(pipe.h, response, out.detail);
         return 0;
     }

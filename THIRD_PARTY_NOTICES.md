@@ -1,6 +1,6 @@
 # Third-party notices
 
-The four button icons in `assets/fluent` are copied, without changing their paths,
+The six button icons in `assets/fluent` are copied, without changing their paths,
 from **Fluent UI System Icons** by Microsoft:
 
 | Local name | Original SVG |
@@ -9,6 +9,8 @@ from **Fluent UI System Icons** by Microsoft:
 | delete | `ic_fluent_delete_20_regular.svg` |
 | restore | `ic_fluent_arrow_undo_20_regular.svg` |
 | backups | `ic_fluent_folder_open_20_regular.svg` |
+| disable | `ic_fluent_prohibited_20_regular.svg` |
+| enable | `ic_fluent_checkmark_circle_20_regular.svg` |
 
 Source: https://github.com/microsoft/fluentui-system-icons
 

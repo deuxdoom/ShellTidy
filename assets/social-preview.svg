@@ -80,6 +80,6 @@
     <path d="M840 428H1176" stroke="#E5EBF4"/>
     <text x="1008" y="461" text-anchor="middle" font-size="15" font-weight="600" fill="#6D7F97">Back up. Clean up. Restore.</text>
     <text x="80" y="544" font-size="18" fill="#7C8BA2">github.com/deuxdoom/ShellTidy</text>
-    <text x="1200" y="544" text-anchor="end" font-size="16" font-weight="600" fill="#6D7F97">v0.0.1</text>
+    <text x="1200" y="544" text-anchor="end" font-size="16" font-weight="600" fill="#6D7F97">v0.0.2</text>
   </g>
 </svg>

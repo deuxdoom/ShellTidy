@@ -35,14 +35,10 @@ def checkbox(x, y, checked=False, disabled=False):
     return out
 
 
-def button(x, y, width, label, primary=False):
-    name={"새로고침":"refresh","선택 항목 삭제":"delete","마지막 작업 복원":"restore","백업 목록":"backups"}.get(label)
-    out=box(x, y, width, 27, "#EAF2FC" if primary else "#FFFFFF", "#8FB2DC" if primary else "#CDD4DF", 4)
-    if name:
-        icon=ET.fromstring((ROOT / "assets/fluent" / f"{name}.svg").read_text(encoding="utf-8"))
-        icon.attrib.update(x=str(x+7),y=str(y+7),width="14",height="14")
-        out+=ET.tostring(icon,encoding="unicode")
-    return out+text(x+width/2+(7 if name else 0), y+18, label, 11, anchor="middle")
+def icon(name, x, y, size=14, opacity=1.0):
+    node = ET.fromstring((ROOT / "assets/fluent" / f"{name}.svg").read_text(encoding="utf-8"))
+    node.attrib.update(x=str(x), y=str(y), width=str(size), height=str(size), opacity=str(opacity))
+    return ET.tostring(node, encoding="unicode")
 
 
 def app_icon(x, y, size):
@@ -51,13 +47,21 @@ def app_icon(x, y, size):
     return ET.tostring(node, encoding="unicode")
 
 
+def combo(x, y, width, label):
+    return box(x, y, width, 22, "#FFFFFF", "#D0D0D0", 3) + text(x + 7, y + 15, label, 11) + \
+        f'<path d="M{x+width-15} {y+9}l4 4 4-4" fill="none" stroke="#6E6E6E"/>'
+
+
 # All records below are invented names and paths. No registry or screenshot capture is used.
+# (name, type, status, enabled, path, extensions, description, checked, tone)
 MENUS = [
-    ("Aster View로 열기", "셸 메뉴", "정상", r"C:\Apps\AsterView\viewer.exe", "HKCU · shared", False, False),
-    ("Legacy Preview", "셸 확장", "경로 없음", r"C:\OldApps\Preview\menu.dll", "HKCU · shared", True, False),
-    ("Orbit Notes", "셸 메뉴", "정상", r"C:\Apps\OrbitNotes\notes.exe", "HKCU · shared", False, False),
-    ("Windows 기본 메뉴", "셸 메뉴", "시스템 보호", r"C:\Windows\explorer.exe", "HKLM · shared", False, True),
-    ("Example Package", "최신/패키지 · 조회", "확인 필요", "패키지 COM 후보 · 조회 전용", "HKLM · shared", False, True),
+    ("Legacy Preview", "셸 확장", "경로 없음", "사용", r"C:\OldApps\Preview\menu.dll", "*", "", True, "problem"),
+    ("OldViewer.exe", "연결 프로그램", "등록 없음", "", r"(등록 없음) Applications\OldViewer.exe", ".jpg .png", "", True, "problem"),
+    ("Aster View로 열기", "셸 메뉴", "확인 필요", "사용", r"D:\Apps\AsterView\viewer.exe", "*", "", False, "normal"),
+    ("Orbit Notes에 추가", "셸 메뉴", "정상", "사용 안 함", r"C:\Apps\OrbitNotes\notes.exe", "*", "Orbit Notes", False, "disabled"),
+    ("Cloud Sync 공유", "셸 확장", "정상", "사용", r"C:\Apps\CloudSync\shellext.dll", "*", "Cloud Sync Shell", False, "normal"),
+    ("Photo Tools", "최신 메뉴", "확인 필요", "사용", "ExplorerCommand · 조회 전용", ".jpg .png", "", False, "normal"),
+    ("열기", "셸 메뉴", "시스템 보호", "", r"C:\Windows\explorer.exe", "Folder", "Windows Explorer", None, "protected"),
 ]
 
 
@@ -65,39 +69,58 @@ def frame(rows):
     out = ['<svg xmlns="http://www.w3.org/2000/svg" width="1416" height="960" viewBox="0 0 944 640">',
            '<title>ShellTidy UI preview using fictional example data</title>',
            '<desc>Constructed UI illustration. Names, paths and registrations are fictional.</desc>',
-           box(.5, .5, 943, 639, "#F8F9FB", "#BFC8D5", 8),
-           '<path d="M8 1H936Q943 1 943 8V30H1V8Q1 1 8 1" fill="#F1F5FB"/>',
+           box(.5, .5, 943, 639, "#F3F3F3", "#C9C9C9", 8),
+           '<path d="M8 1H936Q943 1 943 8V30H1V8Q1 1 8 1" fill="#EEF2F8"/>',
            app_icon(10, 8, 15), text(32, 20, "ShellTidy", 11),
-           text(840, 21, "−", 16), box(879, 11, 9, 9, "none", "#627188"),
-           '<path d="M916 11l9 9m0-9-9 9" stroke="#627188"/>',
-           text(20, 74, "ShellTidy", 25, "#1D2B42", 600),
-           text(21, 97, "불필요한 연결 프로그램과 우클릭 메뉴를 정리합니다.", 11, "#68788E")]
-    for x, width, label, active in [(20, 111, "연결 프로그램", False), (131, 108, "우클릭 메뉴", True), (239, 49, "전체", False)]:
-        out += [box(x, 114, width, 25, "#FFFFFF" if active else "#F0F2F6", "#D9DFE9"), text(x+width/2, 131, label, 11, anchor="middle")]
-    out += [box(526, 114, 240, 25), text(535, 131, "프로그램, 경로, 확장자 검색", 10, "#93A0B1"),
-            box(777, 114, 147, 25), text(786, 131, "전체 상태", 11), '<path d="M910 124l4 4 4-4" fill="none" stroke="#8190A4"/>',
-            box(20, 150, 904, 291), box(21, 151, 902, 27, "#F7F9FC", "none")]
-    columns = [20, 167, 288, 404, 811, 924]
-    for x in columns[1:-1]:
-        out += [f'<path d="M{x} 151V440" stroke="#EDF0F5"/>']
-    for x, label in [(31,"프로그램 ↑"),(178,"유형"),(299,"상태"),(415,"실행 경로"),(821,"등록 위치")]:
-        out += [text(x, 169, label, 11, "#56657A")]
-    for i, (name, kind, status, path, source, checked, disabled) in enumerate(rows):
-        y = 179+i*29
-        if i == 1:
-            out += [box(21, y, 902, 29, "#EDF4FD", "none")]
-        color = "#8C96A5" if disabled else ("#AA554A" if status=="경로 없음" else "#354256")
-        out += [checkbox(25, y+8, checked, disabled), text(44,y+21,name,11,color), text(178,y+21,kind,10,color),
-                text(299,y+21,status,11,color), text(415,y+21,path,10,color), text(821,y+21,source,9,color)]
-    out += [box(20, 454, 904, 91, "#FAFBFD", "#DCE2EA")]
-    info = ["Legacy Preview | 경로 없음", r"명령: C:\OldApps\Preview\menu.dll", "형식: ContextMenuHandlers 참조만 삭제 · 공유 CLSID 보존", r"HKCU\Software\Classes\*\shellex\ContextMenuHandlers\LegacyPreview"]
+           text(840, 21, "−", 16), box(879, 11, 9, 9, "none", "#5F5F5F"),
+           '<path d="M916 11l9 9m0-9-9 9" stroke="#5F5F5F"/>']
+    x = 14
+    for label in ["파일(F)", "편집(E)", "보기(V)", "옵션(O)", "도움말(H)"]:
+        out.append(text(x, 45, label, 11, "#1B1B1B"))
+        x += 52
+    tools = [("refresh", "새로고침", 1.0), None, ("delete", "삭제", 1.0), ("disable", "사용 안 함", 1.0),
+             ("enable", "사용", 0.35), None, ("restore", "복원", 1.0), ("backups", "백업", 1.0)]
+    x = 14
+    for item in tools:
+        if item is None:
+            out.append(f'<path d="M{x+4} 58V76" stroke="#D0D0D0"/>')
+            x += 12
+            continue
+        name, label, opacity = item
+        out += [icon(name, x, 60, 14, opacity), text(x + 18, 72, label, 11, "#1B1B1B" if opacity == 1 else "#A8A8A8")]
+        x += 30 + len(label) * 11
+    out += [box(480, 56, 230, 22, "#FFFFFF", "#D0D0D0", 3), text(487, 71, "검색 (Ctrl+F)", 11, "#8A8A8A"),
+            combo(716, 56, 104, "모든 유형"), combo(826, 56, 108, "모든 상태")]
+    out += [box(10, 86, 924, 424, "#FFFFFF", "#E0E0E0")]
+    columns = [(10, "이름"), (170, "유형"), (256, "상태 ↑"), (330, "사용 여부"), (398, "명령 / 파일 경로"),
+               (704, "확장자"), (790, "설명")]
+    for x, label in columns:
+        if x > 10:
+            out.append(f'<path d="M{x} 87V108" stroke="#E5E5E5"/>')
+        out.append(text(x + 8, 102, label, 11, "#4C4C4C"))
+    out.append('<path d="M11 108H933" stroke="#EAEAEA"/>')
+    for i, (name, kind, status, enabled, path, exts, desc, checked, tone) in enumerate(rows):
+        y = 109 + i * 26
+        fill = "#CCE8FF" if i == 0 else ("#FDE7E9" if tone == "problem" else None)
+        if fill:
+            out.append(box(11, y, 922, 26, fill, "none"))
+        color = {"disabled": "#8A8A8A", "protected": "#707070"}.get(tone, "#1B1B1B")
+        if checked is not None:
+            out.append(checkbox(16, y + 7, checked))
+        values = [(36, name), (178, kind), (264, status), (338, enabled), (406, path), (712, exts), (798, desc)]
+        for vx, value in values:
+            out.append(text(vx, y + 17, value, 11 if vx < 400 else 10.5, color))
+    out += [box(10, 518, 924, 86, "#FFFFFF", "#E0E0E0")]
+    info = ["Legacy Preview  |  셸 확장  |  경로 없음  |  사용",
+            r"명령: C:\OldApps\Preview\menu.dll",
+            "Only the ContextMenuHandlers reference is removed; shared CLSID is preserved / 핸들러 참조만 삭제, CLSID 보존",
+            r"HKCU\Software\Classes\*\shellex\ContextMenuHandlers\LegacyPreview [key] [64-bit]"]
     for i, value in enumerate(info):
-        out += [text(28,472+i*18,value,10,"#65758B")]
-    selected = sum(row[5] for row in rows)
-    out += [text(20, 566, f"{len(rows)}개 표시 / 전체 {len(rows)}개  ·  선택 {selected}", 11, "#65758B"),
-            checkbox(21, 579), text(41,590,"정리 완료 후 Windows 탐색기 자동 재시작",11),
-            button(20,603,90,"새로고침"), button(120,603,127,"선택 항목 삭제",True),
-            button(684,603,139,"마지막 작업 복원"),button(833,603,91,"백업 목록")]
+        out.append(text(20, 537 + i * 18, value, 10.5, "#323232"))
+    checked = sum(1 for row in rows if row[7])
+    out += ['<path d="M1 614H943" stroke="#E0E0E0"/>',
+            text(20, 632, f"표시 {len(rows)} / {len(rows)} · 경로 없음 1 · 등록 없음 1 · 사용 안 함 1 · 체크 {checked}",
+                 11, "#606060")]
     return out
 
 

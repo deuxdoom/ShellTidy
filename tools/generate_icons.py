@@ -23,7 +23,7 @@ def render(svg: Path, target: Path, size: int) -> Image.Image:
 
 image = render(ASSETS / "shelltidy.svg", ASSETS / "shelltidy.png", 256)
 image.save(ASSETS / "shelltidy.ico", sizes=[(n, n) for n in (16, 20, 24, 32, 48, 64, 128, 256)])
-for name in ("refresh", "delete", "restore", "backups"):
+for name in ("refresh", "delete", "restore", "backups", "disable", "enable"):
     image = render(ASSETS / "fluent" / f"{name}.svg", ASSETS / "fluent" / f"{name}.png", 64)
     image.save(ASSETS / "fluent" / f"{name}.ico", sizes=[(n, n) for n in (16, 20, 24, 32, 48, 64)])
-print("Generated app PNG/ICO and four Fluent UI button icons.")
+print("Generated app PNG/ICO and six Fluent UI button icons.")

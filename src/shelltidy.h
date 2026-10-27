@@ -74,9 +74,23 @@ enum class Status
 {
     Healthy,
     Missing,
+    Orphan, // The referenced ProgID, Applications key or CLSID is not registered at all.
     Duplicate,
     Review,
     Protected
+};
+enum class Action
+{
+    Delete,
+    Disable, // Adds a reversible LegacyDisable or Shell Extensions\Blocked value.
+    Enable   // Removes those values again.
+};
+enum class FileState
+{
+    Present,
+    Folder,
+    Missing,    // The volume is reachable and the file is absent.
+    Unavailable // Drive, network share or access state prevents a reliable answer.
 };
 struct Value
 {
@@ -94,12 +108,14 @@ struct Target
 };
 struct Entry
 {
-    std::wstring name, command, executable, source, identity, reason;
+    std::wstring name, command, executable, source, identity, reason, description, company;
     Kind kind = Kind::OpenWith;
     Status status = Status::Review;
-    bool protectedItem = false, unsupported = false, checked = false;
+    bool protectedItem = false, unsupported = false, checked = false, orphan = false, packaged = false;
+    bool switchable = false, disabled = false;
     std::set<std::wstring> extensions, progids;
     std::vector<Target> targets;
+    std::vector<Target> switches; // Disable creates switches[0]; enable removes every existing switch.
 };
 struct Roots
 {
@@ -107,6 +123,8 @@ struct Roots
     std::wstring fileExts = L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts";
     bool isolated = false;
     std::wstring registeredApps = L"Software\\RegisteredApplications";
+    std::wstring urlAssociations = L"Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations";
+    std::wstring blocked = L"Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Blocked";
 };
 struct ScanResult
 {
@@ -125,6 +143,7 @@ struct Mutation
     std::vector<SavedValue> before;
     std::vector<std::wstring> keys;
     std::optional<Value> after; // null = delete; otherwise exact replacement (MRUList).
+    std::wstring context;       // Scanned command identity, rechecked before deletion (backup v2).
     DWORD phase = 0;            // 0 prepared, 1 durably recorded intent, 2 verified success, 3 restored.
 };
 struct Journal
@@ -135,6 +154,7 @@ struct Journal
 struct Outcome
 {
     unsigned success = 0, failed = 0, conflicts = 0;
+    bool registryChanged = false;
     std::wstring detail, backup;
     bool restartOK = true;
 };
@@ -146,6 +166,7 @@ RECT centeredRect(const RECT &work, int width, int height);
 std::wstring textValue(const Value &v);
 Value stringValue(const std::wstring &s, DWORD type = REG_SZ);
 std::wstring describe(const Target &t);
+std::wstring targetId(const Target &t, const Roots &roots = {});
 bool sharedTarget(const Target &t, const Roots &roots = {});
 Target canonicalTarget(Target t, const Roots &roots = {});
 std::wstring errorText(DWORD code);
@@ -157,19 +178,29 @@ void writeValue(const Target &t, const Value &v);
 std::vector<std::wstring> subkeys(const Target &t);
 std::vector<std::pair<std::wstring, Value>> values(const Target &t);
 std::wstring resolveCommand(const std::wstring &command);
+std::wstring expandEnvironment(const std::wstring &text);
+FileState fileState(const std::wstring &path);
+bool isGuid(const std::wstring &text);
+std::wstring displayText(const std::wstring &raw);
+std::pair<std::wstring, std::wstring> versionText(const std::wstring &path);
+std::wstring registryPath(const Target &t, const Roots &roots = {});
 ScanResult scan(const Roots &roots, const std::atomic_bool &cancel);
+void reconcileViews(std::vector<Entry> &entries, const Roots &roots = {});
+bool eligible(const Entry &e, Action action);
+std::vector<size_t> actionEntries(const std::vector<Entry> &entries, const std::vector<size_t> &visible,
+                                  const std::vector<size_t> &selected, Action action);
 std::wstring backupDirectory();
 std::vector<std::wstring> backupFiles();
-Journal prepare(const std::vector<Entry> &entries, const Roots &roots = {});
+Journal prepare(const std::vector<Entry> &entries, const Roots &roots = {}, Action action = Action::Delete);
 void saveJournal(const Journal &journal);
 Journal loadJournal(const std::wstring &file);
 Outcome apply(Journal &journal, const std::atomic_bool &cancel, const Roots &roots = {});
 Outcome restore(Journal &journal, const std::atomic_bool &cancel, const Roots &roots = {});
 bool isElevated();
+bool needsElevation(const Journal &journal, bool restoring);
 HANDLE createInstanceLock(const std::wstring &suffix, bool &alreadyRunning);
 void activateExistingInstance();
-Outcome executeElevated(const std::vector<Entry> &entries, bool restoring, const std::wstring &backup,
-                        HWND owner);
+Outcome executeElevated(Journal &journal, bool restoring, HWND owner);
 int elevatedWorker(const std::wstring &pipe);
 bool restartExplorer(std::wstring &detail);
 bool explorerPreflight(std::wstring &detail);

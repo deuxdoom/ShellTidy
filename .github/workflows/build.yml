@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v7.0.1
-      - name: Build Release x64
+      - name: Build Release x64 and isolated test build
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force build/temp | Out-Null
@@ -21,18 +21,20 @@ jobs:
           $install = & $vswhere -latest -products '*' -requires Microsoft.Component.MSBuild -property installationPath
           & "$install/MSBuild/Current/Bin/MSBuild.exe" ShellTidy.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /verbosity:minimal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$install/MSBuild/Current/Bin/MSBuild.exe" ShellTidy.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:SelfTest=true /verbosity:minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Run isolated registry tests
         shell: pwsh
         run: |
           $env:SHELLTIDY_BACKUP_DIR = "$PWD/build/test-backups"
           $report = "$PWD/build/test-results.txt"
-          $test = Start-Process ./dist/ShellTidy.exe -ArgumentList @('--self-test',('"' + $report + '"')) -PassThru -Wait -WindowStyle Hidden
+          $test = Start-Process ./build/test/ShellTidy.Tests.exe -ArgumentList @('--self-test',('"' + $report + '"')) -PassThru -Wait -WindowStyle Hidden
           Get-Content -LiteralPath $report
           if ($test.ExitCode -ne 0) { exit $test.ExitCode }
       - name: Upload executable and test report
         uses: actions/upload-artifact@v7.0.2
         with:
-          name: ShellTidy-0.0.1-win-x64
+          name: ShellTidy-0.0.2-win-x64
           path: |
             dist/ShellTidy.exe
             build/test-results.txt

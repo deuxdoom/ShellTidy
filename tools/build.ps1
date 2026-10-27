@@ -15,13 +15,22 @@ $resource=Join-Path $intermediate 'app.res'
 Push-Location (Join-Path $projectRoot 'resources')
 try{& $resourceCompiler /nologo /fo $resource app.rc;if($LASTEXITCODE -ne 0){throw 'Resource compilation failed'}}finally{Pop-Location}
 $sources=@(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'src') -Filter '*.cpp' | Sort-Object Name | ForEach-Object FullName)
-$sources+=Join-Path $PSScriptRoot 'native_tests.cpp'
 $exe=Join-Path $OutputDirectory 'ShellTidy.exe'
 $options=@('/nologo','/std:c++20','/utf-8','/EHsc','/O2','/MT','/W4','/permissive-','/DUNICODE','/D_UNICODE','/D_WIN32_WINNT=0x0A00','/DWINVER=0x0A00','/DNTDDI_VERSION=0x0A000000')
-$libraries=@('user32.lib','gdi32.lib','advapi32.lib','shell32.lib','shlwapi.lib','comctl32.lib','ole32.lib','uxtheme.lib','dwmapi.lib','rstrtmgr.lib')
+$libraries=@('user32.lib','gdi32.lib','advapi32.lib','shell32.lib','shlwapi.lib','comctl32.lib','ole32.lib','uxtheme.lib','dwmapi.lib','rstrtmgr.lib','version.lib','comdlg32.lib')
+$linkOptions=@('/SUBSYSTEM:WINDOWS','/MACHINE:X64','/MANIFEST:NO','/DYNAMICBASE','/NXCOMPAT','/HIGHENTROPYVA')
 Push-Location $intermediate
-try{& $compiler @options @sources $resource "/Fe:$exe" /link /SUBSYSTEM:WINDOWS /MACHINE:X64 /MANIFEST:NO /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA @libraries;if($LASTEXITCODE -ne 0){throw 'Native compilation failed'}}finally{Pop-Location}
+try{& $compiler @options @sources $resource "/Fe:$exe" /link @linkOptions @libraries;if($LASTEXITCODE -ne 0){throw 'Native compilation failed'}}finally{Pop-Location}
+# The isolated registry tests are linked only into a separate test executable, never into dist.
+$testIntermediate=Join-Path $PSScriptRoot 'output\test-build'
+New-Item -ItemType Directory -Force -Path $testIntermediate | Out-Null
+$testExe=Join-Path $testIntermediate 'ShellTidy.Tests.exe'
+Push-Location $testIntermediate
+try{& $compiler @options '/DSHELLTIDY_SELF_TEST' @sources (Join-Path $PSScriptRoot 'native_tests.cpp') $resource "/Fe:$testExe" /link @linkOptions @libraries;if($LASTEXITCODE -ne 0){throw 'Test compilation failed'}}finally{Pop-Location}
 $result=Get-Item -LiteralPath $exe
 if($result.Length -gt 10MB){throw 'EXE exceeds 10 MB'}
-Write-Output "Built with project-local MSVC: $($result.FullName) ($($result.Length) bytes)"
-if($Test){& (Join-Path $PSScriptRoot 'test.ps1') -ExePath $exe}
+# Every build rewrites the checksum next to the EXE so the pair can never drift apart.
+$hash=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+[IO.File]::WriteAllText((Join-Path $OutputDirectory 'SHA256SUMS.txt'),"$hash  ShellTidy.exe`r`n",[Text.Encoding]::ASCII)
+Write-Output "Built with project-local MSVC: $($result.FullName) ($($result.Length) bytes, SHA256 $hash)"
+if($Test){& (Join-Path $PSScriptRoot 'test.ps1') -ExePath $testExe}

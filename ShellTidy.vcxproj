@@ -44,7 +44,7 @@
       <EnableUAC>false</EnableUAC>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
-      <AdditionalDependencies>user32.lib;gdi32.lib;advapi32.lib;shell32.lib;shlwapi.lib;comctl32.lib;ole32.lib;uxtheme.lib;dwmapi.lib;rstrtmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>user32.lib;gdi32.lib;advapi32.lib;shell32.lib;shlwapi.lib;comctl32.lib;ole32.lib;uxtheme.lib;dwmapi.lib;rstrtmgr.lib;version.lib;comdlg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -52,11 +52,20 @@
     <ClCompile Include="src\operations.cpp" />
     <ClCompile Include="src\registry.cpp" />
     <ClCompile Include="src\scanner.cpp" />
-    <ClCompile Include="tools\native_tests.cpp" />
     <ClCompile Include="src\ui.cpp" />
     <ClCompile Include="src\ui_support.cpp" />
     <ClCompile Include="src\windows.cpp" />
   </ItemGroup>
+  <!-- /p:SelfTest=true builds build\test\ShellTidy.Tests.exe; the release EXE never links the tests. -->
+  <PropertyGroup Condition="'$(SelfTest)'=='true'">
+    <OutDir>$(MSBuildThisFileDirectory)build\test\</OutDir>
+    <IntDir>$(MSBuildThisFileDirectory)build\msbuild-test\</IntDir>
+    <TargetName>ShellTidy.Tests</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(SelfTest)'=='true'">
+    <ClCompile><PreprocessorDefinitions>SHELLTIDY_SELF_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup Condition="'$(SelfTest)'=='true'"><ClCompile Include="tools\native_tests.cpp" /></ItemGroup>
   <ItemGroup><ClInclude Include="src\shelltidy.h" /><ResourceCompile Include="resources\app.rc" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

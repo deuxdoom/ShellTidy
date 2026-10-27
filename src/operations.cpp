@@ -13,6 +13,8 @@ struct Writer
     Bytes b;
     void u(DWORD n)
     {
+        if (b.size() > MaxBackup - 4)
+            throw Error("Backup too large", ERROR_FILE_TOO_LARGE);
         for (int i = 0; i < 4; ++i)
             b.push_back(static_cast<BYTE>(n >> (i * 8)));
     }
@@ -21,13 +23,19 @@ struct Writer
         if (s.size() > 32768)
             throw Error("Backup string too large", ERROR_INVALID_DATA);
         u(static_cast<DWORD>(s.size()));
+        if (s.size() * 2 > MaxBackup - b.size())
+            throw Error("Backup too large", ERROR_FILE_TOO_LARGE);
         auto p = reinterpret_cast<const BYTE *>(s.data());
         b.insert(b.end(), p, p + s.size() * 2);
     }
     void val(const Value &v)
     {
+        if (v.data.size() > 8 * 1024 * 1024)
+            throw Error("Backup value too large", ERROR_FILE_TOO_LARGE);
         u(v.type);
         u(static_cast<DWORD>(v.data.size()));
+        if (v.data.size() > MaxBackup - b.size())
+            throw Error("Backup too large", ERROR_FILE_TOO_LARGE);
         b.insert(b.end(), v.data.begin(), v.data.end());
     }
 };
@@ -87,12 +95,87 @@ bool under(const std::wstring &path, const std::wstring &root)
 {
     return path.starts_with(root + L"\\");
 }
+bool validPath(const std::wstring &path, bool relative = false)
+{
+    return (relative && path.empty()) || (!path.empty() && path.front() != L'\\' && path.back() != L'\\' &&
+                                          path.find(L"\\\\") == path.npos && path.find(L'\0') == path.npos &&
+                                          path.find(L'/') == path.npos && path.find(L"..") == path.npos &&
+                                          lower(path).find(L"userchoice") == path.npos);
+}
+// A reversible switch is a verb's LegacyDisable value or a CLSID in Shell Extensions\Blocked.
+bool switchTarget(const Target &t)
+{
+    auto p = lower(t.path);
+    if (t.tree)
+        return false;
+    if (lower(t.name) == L"legacydisable")
+    {
+        auto verb = p.rfind(L"\\shell\\");
+        return verb != p.npos && p.find(L'\\', verb + 7) == p.npos;
+    }
+    return p.ends_with(L"\\shell extensions\\blocked") && isGuid(t.name);
+}
+Value switchValue(const Target &t, const std::wstring &name)
+{
+    return stringValue(lower(t.name) == L"legacydisable" ? L"" : name.substr(0, 200));
+}
+void validateSnapshot(const Mutation &m)
+{
+    if (!validPath(m.target.path) || m.target.name.find(L'\0') != m.target.name.npos ||
+        (m.target.hive != Hive::User && m.target.hive != Hive::Machine) ||
+        (m.target.view != KEY_WOW64_64KEY && m.target.view != KEY_WOW64_32KEY) || m.phase > 3 ||
+        m.keys.size() > 100000 || m.before.size() > 100000)
+        throw Error("Invalid mutation snapshot", ERROR_INVALID_DATA);
+    std::set<std::wstring> keys, names;
+    for (const auto &k : m.keys)
+        if (!validPath(k, true) || !keys.insert(lower(k)).second)
+            throw Error("Invalid snapshot key", ERROR_INVALID_DATA);
+    if (m.target.tree)
+    {
+        if (m.after || !keys.contains(L""))
+            throw Error("Invalid subtree snapshot", ERROR_INVALID_DATA);
+    }
+    else if (m.before.empty())
+    {
+        // A created switch did not exist before; restore removes only this exact string.
+        if (!m.keys.empty() || !m.after || !switchTarget(m.target) || m.after->type != REG_SZ ||
+            *m.after != stringValue(textValue(*m.after)) || textValue(*m.after).size() > 200)
+            throw Error("Invalid switch snapshot", ERROR_INVALID_DATA);
+    }
+    else if (!m.keys.empty() || m.before.size() != 1 || !m.before[0].relative.empty() ||
+             m.before[0].name != m.target.name)
+        throw Error("Invalid value snapshot", ERROR_INVALID_DATA);
+    for (const auto &v : m.before)
+    {
+        auto id = std::to_wstring(v.relative.size()) + L":" + lower(v.relative) + lower(v.name);
+        if (!validPath(v.relative, true) || v.name.find(L'\0') != v.name.npos ||
+            (m.target.tree && !keys.contains(lower(v.relative))) || !names.insert(id).second)
+            throw Error("Invalid snapshot value", ERROR_INVALID_DATA);
+    }
+    if (m.after && !m.before.empty())
+    {
+        const auto &before = m.before[0].value;
+        auto old = textValue(before), next = textValue(*m.after);
+        if (!lower(m.target.path).ends_with(L"\\openwithlist") || lower(m.target.name) != L"mrulist" ||
+            (before.type != REG_SZ && before.type != REG_EXPAND_SZ) || m.after->type != before.type ||
+            before != stringValue(old, before.type) || *m.after != stringValue(next, before.type))
+            throw Error("Invalid MRU replacement", ERROR_INVALID_DATA);
+        size_t position = 0;
+        for (auto c : next)
+        {
+            position = old.find(c, position);
+            if (position == old.npos)
+                throw Error("MRU replacement must only remove letters", ERROR_INVALID_DATA);
+            ++position;
+        }
+    }
+}
 void validate(const Target &t, const Roots &roots)
 {
     auto p = lower(t.path), c = lower(roots.classes), f = lower(roots.fileExts);
     if ((t.view != KEY_WOW64_64KEY && t.view != KEY_WOW64_32KEY) ||
         (t.hive != Hive::User && t.hive != Hive::Machine) || p.find(L"userchoice") != p.npos ||
-        p.find(L"..") != p.npos || t.path.empty())
+        !validPath(t.path) || t.name.find(L'\0') != t.name.npos)
         throw Error("Forbidden registry target", ERROR_ACCESS_DENIED);
     bool ok = false;
     if (under(p, c))
@@ -108,10 +191,13 @@ void validate(const Target &t, const Roots &roots)
                 ok = false;
         }
         else
-            ok = p.ends_with(L"\\openwithprogids");
+            ok = p.ends_with(L"\\openwithprogids") ||
+                 (switchTarget(t) && !rel.starts_with(L"clsid\\") && !rel.starts_with(L"packagedcom\\"));
     }
     if (t.hive == Hive::User && under(p, f) && !t.tree)
         ok = p.ends_with(L"\\openwithprogids") || p.ends_with(L"\\openwithlist");
+    if (!t.tree && p == lower(roots.blocked) && isGuid(t.name) && t.view == KEY_WOW64_64KEY)
+        ok = true;
     if (!t.tree && p.starts_with(L"software\\") && p.ends_with(L"\\fileassociations"))
     {
         for (const auto &[n, v] : values({t.hive, t.view, roots.registeredApps, L"", false}))
@@ -121,18 +207,30 @@ void validate(const Target &t, const Roots &roots)
     if (!ok)
         throw Error("Unsupported registry target", ERROR_ACCESS_DENIED);
 }
-void captureTree(const Target &target, const std::wstring &relative, Mutation &m, unsigned depth = 0)
+void captureTree(const Target &target, const std::wstring &relative, Mutation &m, unsigned depth = 0,
+                 size_t *captured = nullptr)
 {
-    if (depth > 48 || m.before.size() > 100000)
+    size_t localBytes = 0;
+    if (!captured)
+        captured = &localBytes;
+    if (depth > 48 || m.before.size() >= 100000 || m.keys.size() >= 100000)
         throw Error("Registry subtree too large", ERROR_FILE_TOO_LARGE);
     auto t = target;
     if (!relative.empty())
         t.path += L"\\" + relative;
     m.keys.push_back(relative);
+    *captured += relative.size() * sizeof(wchar_t) + 4;
     for (const auto &[name, value] : values(t))
+    {
+        *captured += (relative.size() + name.size()) * sizeof(wchar_t) + value.data.size() + 16;
+        if (*captured > MaxBackup)
+            throw Error("Registry subtree exceeds backup limit", ERROR_FILE_TOO_LARGE);
         m.before.push_back({relative, name, value});
+    }
+    if (*captured > MaxBackup)
+        throw Error("Registry subtree exceeds backup limit", ERROR_FILE_TOO_LARGE);
     for (const auto &child : subkeys(t))
-        captureTree(target, relative.empty() ? child : relative + L"\\" + child, m, depth + 1);
+        captureTree(target, relative.empty() ? child : relative + L"\\" + child, m, depth + 1, captured);
 }
 bool sameTree(const Mutation &a, const Mutation &b)
 {
@@ -160,6 +258,8 @@ bool matchesBefore(const Mutation &m)
         return sameTree(m, now);
     }
     auto v = readValue(m.target);
+    if (m.before.empty())
+        return !v; // A switch is created only where no value exists.
     return v && m.before.size() == 1 && *v == m.before[0].value;
 }
 void deleteTarget(const Target &t)
@@ -187,16 +287,40 @@ void deleteTarget(const Target &t)
             throw Error("RegDeleteValue", e);
     }
 }
-std::set<std::wstring> allowedNow(const Roots &roots, const std::atomic_bool &cancel)
+std::wstring entryContext(const Entry &e)
 {
-    std::set<std::wstring> out;
+    return std::to_wstring(static_cast<int>(e.kind)) + L":" + std::to_wstring(e.command.size()) + L":" +
+           e.command + lower(e.executable);
+}
+using Inventory = std::map<std::wstring, std::set<std::wstring>>;
+Inventory allowedNow(const Roots &roots, const std::atomic_bool &cancel)
+{
+    Inventory out;
+    std::set<std::wstring> blocked;
     auto s = scan(roots, cancel);
     if (s.canceled)
         throw Error("Canceled", ERROR_CANCELLED);
     for (const auto &e : s.entries)
-        if (!e.protectedItem && !e.unsupported)
-            for (const auto &t : e.targets)
-                out.insert(describe(canonicalTarget(t, roots)));
+    {
+        for (const auto &t : e.targets)
+        {
+            auto id = targetId(t, roots);
+            if (e.protectedItem || e.unsupported)
+                blocked.insert(id);
+            else
+                out[id].insert(entryContext(e));
+        }
+        for (const auto &t : e.switches)
+        {
+            auto id = targetId(t, roots);
+            if (e.switchable)
+                out[id].insert(entryContext(e));
+            else
+                blocked.insert(id);
+        }
+    }
+    for (const auto &id : blocked)
+        out.erase(id); // Protection in either WOW64 view wins for a shared physical registration.
     return out;
 }
 } // namespace
@@ -231,26 +355,62 @@ std::vector<std::wstring> backupFiles()
     std::sort(out.rbegin(), out.rend());
     return out;
 }
-Journal prepare(const std::vector<Entry> &entries, const Roots &roots)
+Journal prepare(const std::vector<Entry> &entries, const Roots &roots, Action action)
 {
     std::atomic_bool cancel = false;
     auto allowed = allowedNow(roots, cancel);
     Journal j;
     std::set<std::wstring> seen;
+    size_t captured = 0;
     for (const auto &e : entries)
     {
+        if (action == Action::Delete)
+            continue;
+        // Disabling creates the first switch; enabling removes every switch that currently exists.
+        if (!e.switchable || e.switches.empty() || e.disabled != (action == Action::Enable))
+            throw Error("Entry cannot be switched", ERROR_ACCESS_DENIED);
+        auto chosen = action == Action::Disable ? std::vector<Target>{e.switches.front()} : e.switches;
+        for (const auto &original : chosen)
+        {
+            auto t = canonicalTarget(original, roots);
+            validate(t, roots);
+            auto id = targetId(t, roots);
+            if (!allowed.contains(id) || !allowed.at(id).contains(entryContext(e)))
+                throw Error("Entry changed or is now locked", ERROR_RETRY);
+            if (!seen.insert(id).second)
+                continue;
+            auto v = readValue(t);
+            if (action == Action::Disable ? v.has_value() : !v.has_value())
+                continue;
+            Mutation m;
+            m.target = t;
+            m.context = entryContext(e);
+            if (action == Action::Disable)
+                m.after = switchValue(t, e.name);
+            else
+                m.before.push_back({L"", t.name, *v});
+            validateSnapshot(m);
+            j.items.push_back(std::move(m));
+        }
+    }
+    for (const auto &e : entries)
+    {
+        if (action != Action::Delete)
+            break;
         if (e.protectedItem || e.unsupported)
             throw Error("Protected entry", ERROR_ACCESS_DENIED);
         for (const auto &original : e.targets)
         {
             auto t = canonicalTarget(original, roots);
             validate(t, roots);
-            if (!allowed.contains(describe(t)))
+            auto id = targetId(t, roots);
+            if (!allowed.contains(id) || !allowed.at(id).contains(entryContext(e)))
                 throw Error("Entry changed or is now protected", ERROR_RETRY);
-            if (!seen.insert(lower(describe(t))).second)
+            if (!seen.insert(id).second)
                 continue;
             Mutation m;
             m.target = t;
+            m.context = entryContext(e);
             if (t.tree)
             {
                 if (!exists(t))
@@ -264,6 +424,16 @@ Journal prepare(const std::vector<Entry> &entries, const Roots &roots)
                     throw Error("Entry disappeared", ERROR_FILE_NOT_FOUND);
                 m.before.push_back({L"", t.name, *v});
             }
+            validateSnapshot(m);
+            captured +=
+                (m.target.path.size() + m.target.name.size() + m.context.size()) * sizeof(wchar_t) + 64;
+            for (const auto &key : m.keys)
+                captured += key.size() * sizeof(wchar_t) + 4;
+            for (const auto &value : m.before)
+                captured += (value.relative.size() + value.name.size()) * sizeof(wchar_t) +
+                            value.value.data.size() + 16;
+            if (captured > MaxBackup)
+                throw Error("Selection exceeds backup limit", ERROR_FILE_TOO_LARGE);
             j.items.push_back(std::move(m));
         }
     }
@@ -293,7 +463,7 @@ Journal prepare(const std::vector<Entry> &entries, const Roots &roots)
         {
             auto t = m.target;
             t.name = L"MRUList";
-            auto &pair = mru[describe(t)];
+            auto &pair = mru[targetId(t, roots)];
             pair.first = t;
             pair.second.insert(m.target.name[0]);
         }
@@ -315,6 +485,7 @@ Journal prepare(const std::vector<Entry> &entries, const Roots &roots)
         m.target = pair.first;
         m.before.push_back({L"", L"MRUList", *v});
         m.after = stringValue(s, v->type);
+        validateSnapshot(m);
         j.items.push_back(std::move(m));
     }
     SYSTEMTIME t;
@@ -332,16 +503,20 @@ void saveJournal(const Journal &j)
 {
     Writer w;
     w.u(0x42545453);
-    w.u(1);
+    w.u(2);
+    if (j.items.size() > 100000 || !std::filesystem::path(j.file).is_absolute())
+        throw Error("Invalid backup destination or count", ERROR_INVALID_DATA);
     w.u(static_cast<DWORD>(j.items.size()));
     for (const auto &m : j.items)
     {
+        validateSnapshot(m);
         w.u(static_cast<DWORD>(m.target.hive));
         w.u(m.target.view);
         w.str(m.target.path);
         w.str(m.target.name);
         w.u(m.target.tree);
         w.u(m.phase);
+        w.str(m.context);
         w.u(m.after.has_value());
         if (m.after)
             w.val(*m.after);
@@ -360,7 +535,10 @@ void saveJournal(const Journal &j)
     }
     auto hash = checksum(w.b, w.b.size());
     w.u(hash);
-    std::filesystem::create_directories(std::filesystem::path(j.file).parent_path());
+    std::error_code directoryError;
+    std::filesystem::create_directories(std::filesystem::path(j.file).parent_path(), directoryError);
+    if (directoryError)
+        throw Error("Create backup directory", static_cast<DWORD>(directoryError.value()));
     auto temp = j.file + L".tmp";
     {
         Handle f(CreateFileW(temp.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
@@ -389,8 +567,14 @@ Journal loadJournal(const std::wstring &file)
     if (!ReadFile(f.h, b.data(), static_cast<DWORD>(b.size()), &done, nullptr) || done != b.size())
         throw Error("Read backup");
     Reader r{b};
-    if (r.u() != 0x42545453 || r.u() != 1)
+    Reader trailer{b, b.size() - 4};
+    if (trailer.u() != checksum(b, b.size() - 4))
+        throw Error("Backup checksum mismatch", ERROR_INVALID_DATA);
+    if (r.u() != 0x42545453)
         throw Error("Invalid backup header", ERROR_INVALID_DATA);
+    DWORD version = r.u();
+    if (version != 1 && version != 2)
+        throw Error("Unsupported backup version", ERROR_INVALID_DATA);
     Journal j;
     j.file = file;
     auto count = r.count();
@@ -401,11 +585,19 @@ Journal loadJournal(const std::wstring &file)
         m.target.view = r.u();
         m.target.path = r.str();
         m.target.name = r.str();
-        m.target.tree = r.u() != 0;
+        auto tree = r.u();
+        if (tree > 1)
+            throw Error("Invalid target type", ERROR_INVALID_DATA);
+        m.target.tree = tree != 0;
         m.phase = r.u();
         if (m.phase > 3)
             throw Error("Invalid phase", ERROR_INVALID_DATA);
-        if (r.u())
+        if (version >= 2)
+            m.context = r.str();
+        auto replacement = r.u();
+        if (replacement > 1)
+            throw Error("Invalid replacement flag", ERROR_INVALID_DATA);
+        if (replacement)
             m.after = r.val();
         auto n = r.count();
         for (DWORD k = 0; k < n; ++k)
@@ -426,9 +618,7 @@ Journal loadJournal(const std::wstring &file)
                 throw Error("Invalid relative key", ERROR_INVALID_DATA);
             m.before.push_back(std::move(v));
         }
-        if (!m.target.tree &&
-            (m.before.size() != 1 || !m.before[0].relative.empty() || m.before[0].name != m.target.name))
-            throw Error("Invalid value snapshot", ERROR_INVALID_DATA);
+        validateSnapshot(m);
         j.items.push_back(std::move(m));
     }
     auto hash = r.u();
@@ -443,16 +633,21 @@ Outcome apply(Journal &j, const std::atomic_bool &cancel, const Roots &roots)
     if (cancel)
         return o;
     auto allowed = allowedNow(roots, cancel);
+    for (const auto &m : j.items)
+        validateSnapshot(m);
     saveJournal(j);
     for (auto &m : j.items)
     {
         if (cancel)
             break;
+        if (m.phase != 0)
+            continue;
         try
         {
             validate(m.target, roots);
             bool mru = lower(m.target.name) == L"mrulist" && m.after.has_value();
-            if (!allowed.contains(describe(m.target)) && !mru)
+            auto id = targetId(m.target, roots);
+            if (!mru && (m.context.empty() || !allowed.contains(id) || !allowed.at(id).contains(m.context)))
                 throw Error("Entry is protected or changed", ERROR_RETRY);
             if (!matchesBefore(m))
                 throw Error("Registry changed; refresh first", ERROR_RETRY);
@@ -482,11 +677,21 @@ Outcome apply(Journal &j, const std::atomic_bool &cancel, const Roots &roots)
             if (m.target.tree ? exists(m.target) : (m.after ? remaining != m.after : remaining.has_value()))
                 throw Error("Mutation verification failed", ERROR_WRITE_FAULT);
             m.phase = 2;
+            o.registryChanged = true;
             ++o.success;
             saveJournal(j);
         }
         catch (const Error &e)
         {
+            if (m.phase == 1)
+                try
+                {
+                    o.registryChanged = o.registryChanged || !matchesBefore(m);
+                }
+                catch (...)
+                {
+                    // The durable intent remains recoverable even when the changed key is unreadable.
+                }
             ++o.failed;
             o.detail += describe(m.target) + L"\r\n" + errorText(e.code) + L"\r\n\r\n";
             if (e.code == ERROR_DISK_FULL || e.code == ERROR_WRITE_FAULT)
@@ -511,6 +716,7 @@ Outcome restore(Journal &j, const std::atomic_bool &cancel, const Roots &roots)
             continue;
         try
         {
+            validateSnapshot(m);
             validate(m.target, roots);
             unsigned conflicts = 0;
             bool changed = false;
@@ -531,6 +737,8 @@ Outcome restore(Journal &j, const std::atomic_bool &cancel, const Roots &roots)
                 if (conflicts)
                 {
                     o.conflicts += conflicts;
+                    o.detail += describe(m.target) +
+                                L"\r\nConflict: preserved current subtree / 충돌: 현재 하위 키 보존\r\n";
                     continue;
                 }
                 for (const auto &relative : m.keys)
@@ -547,6 +755,7 @@ Outcome restore(Journal &j, const std::atomic_bool &cancel, const Roots &roots)
                             throw Error("Restore key", e);
                         RegCloseKey(raw);
                         changed = true;
+                        o.registryChanged = true;
                     }
                 }
                 for (const auto &v : m.before)
@@ -560,7 +769,26 @@ Outcome restore(Journal &j, const std::atomic_bool &cancel, const Roots &roots)
                     {
                         writeValue(t, v.value);
                         changed = true;
+                        o.registryChanged = true;
                     }
+                }
+            }
+            else if (m.before.empty())
+            {
+                // Undo a created switch only while it still holds the value ShellTidy wrote.
+                auto current = readValue(m.target);
+                if (current && current == m.after)
+                {
+                    deleteTarget(m.target);
+                    changed = true;
+                    o.registryChanged = true;
+                }
+                else if (current)
+                {
+                    ++o.conflicts;
+                    o.detail += describe(m.target) +
+                                L"\r\nConflict: preserved current value / 충돌: 현재 값 보존\r\n";
+                    continue;
                 }
             }
             else
@@ -574,6 +802,7 @@ Outcome restore(Journal &j, const std::atomic_bool &cancel, const Roots &roots)
                 {
                     writeValue(m.target, original);
                     changed = true;
+                    o.registryChanged = true;
                 }
                 else
                 {

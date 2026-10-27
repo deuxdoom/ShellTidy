@@ -17,8 +17,11 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show)
             result = st::elevatedWorker(argv[2]);
         else if (argc >= 2 && std::wstring(argv[1]) == L"--recover-shell")
             result = st::recoverShell();
+#ifdef SHELLTIDY_SELF_TEST
+        // Only the separate test build links the isolated registry tests.
         else if (argc >= 3 && std::wstring(argv[1]) == L"--self-test")
             result = st::selfTest(argv[2]);
+#endif
         else
         {
             bool alreadyRunning = false;

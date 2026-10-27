@@ -52,8 +52,11 @@ Windows 운영체제 자체의 DLL과 PowerShell은 기본 시스템 구성요�
 .\tools\git.ps1 status --short
 ```
 
-`native_tests.cpp`는 50개 검증을 제공하는 네이티브 자체 테스트 코드입니다.
-`ShellTidy.vcxproj`와 `tools/build.ps1`이 함께 컴파일합니다.
+`native_tests.cpp`는 118개 검증을 제공하는 네이티브 자체 테스트 코드입니다.
+배포용 EXE에는 넣지 않고 테스트 전용 실행 파일로만 컴파일합니다.
+`tools/build.ps1`은 `tools/output/test-build/ShellTidy.Tests.exe`를,
+`ShellTidy.vcxproj`는 `/p:SelfTest=true`일 때 `build/test/ShellTidy.Tests.exe`를 만듭니다.
+`tools/test.ps1`은 기본적으로 로컬 테스트 빌드를 실행합니다.
 
 `generate_ui_previews.py`는 고정된 가상 앱/경로만 사용하며 사용자 레지스트리나 설치 목록을
 읽지 않습니다. `assets/screenshots`는 **예시 데이터로 재구성한 UI 이미지**입니다.

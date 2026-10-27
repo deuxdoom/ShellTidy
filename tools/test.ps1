@@ -1,6 +1,6 @@
 param([string]$ExePath,[string]$Report)
 . (Join-Path $PSScriptRoot 'environment.ps1')
-if(-not $ExePath){$ExePath=Join-Path $projectRoot 'dist\ShellTidy.exe'}
+if(-not $ExePath){$ExePath=Join-Path $PSScriptRoot 'output\test-build\ShellTidy.Tests.exe'}
 if(-not $Report){$Report=Join-Path $PSScriptRoot 'output\test-results.txt'}
 New-Item -ItemType Directory -Force -Path (Split-Path $Report -Parent) | Out-Null
 $env:SHELLTIDY_BACKUP_DIR=Join-Path $PSScriptRoot 'output\test-backups'
