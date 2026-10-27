@@ -67,8 +67,12 @@ class Tests
         wchar_t self[32768];
         GetModuleFileNameW(nullptr, self, 32768);
         exe = self;
-        dir = std::filesystem::path(backupDirectory()).parent_path().wstring() + L"\\Fixtures-" +
-              std::to_wstring(GetCurrentProcessId());
+        // Normalize separators: a backup override such as "$PWD/build/x" must not leak '/' into fixture
+        // paths that resolveCommand returns in canonical backslash form.
+        dir = (std::filesystem::path(backupDirectory()).parent_path() /
+               (L"Fixtures-" + std::to_wstring(GetCurrentProcessId())))
+                  .lexically_normal()
+                  .wstring();
         std::filesystem::create_directories(dir);
         base = L"Software\\ShellTidy\\Tests\\Run-" + std::to_wstring(GetCurrentProcessId());
         roots = {base + L"\\Classes",
